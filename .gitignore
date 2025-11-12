@@ -1,171 +1,91 @@
-# Byte-compiled / optimized / DLL files
+# Python 编译缓存
 __pycache__/
-*.py[codz]
+*.py[cod]
 *$py.class
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-# .python-version
-
-# pipenv
-# Pipfile.lock
-
-# poetry
-# poetry.lock
-# poetry.toml
-
-# pdm
-.pdm-python
-.pdm-build/
-
-# pixi
-.pixi
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-*.env
-.envrc
-.venv
-env/
+# 虚拟环境
 venv/
-ENV/
-env.bak/
-venv.bak/
+.env/
+*.env
+.env.bak
+.venv/
+pip-log.txt
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+build/
+dist/
+*.whl
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# 临时 & 备份文件
+*.bak
+*.log
+*.tmp
+temp/
+tmp/
+*.pid
+*.lock
+*.sock
+*.db-journal
 
-# Rope project settings
-.ropeproject
+# 编辑器配置
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
-# mkdocs documentation
-/site
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# mypy
+# NoneBot / FastAPI 运行产物
+logs/
+nbproject/
+*.db
+*.sqlite
+*.sqlite3
+
+# 测试脚本
+local_test.py
+test_*.py
+debug_*.py
+
+# 私有配置文件
+.env.local
+.env.example.bak
+.env.secret
+settings_local.py
+
+# Docker
+.dockerignore
+Dockerfile~
+docker-compose.yml~
+*.tar
+*.img
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+notebooks/
+output/
+cache/
+.cache/
+
+# 构建系统
+__pypackages__/
+.coverage
+.pytest_cache/
+.tox/
 .mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
 .pyre/
-
-# pytype static type analyzer
 .pytype/
 
-# Cython debug symbols
-cython_debug/
-
-# PyCharm / JetBrains
-# .idea/
-
-# Abstra local cache
-.abstra/
-
-# VSCode
-# .vscode/
-
-# Ruff
-.ruff_cache/
-
-# PyPI config
-.pypirc
-
-# Cursor AI 编辑器
-.cursorignore
-.cursorindexingignore
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
-
-# Environment files (追加)
-.env
-*.env
+# 其他不提交的内容
+*.sql
+*.sql.gz
+*.csv
+*.json.bak
+*.yaml.bak
+*.xml.bak
+*.html.bak

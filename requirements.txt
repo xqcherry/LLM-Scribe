@@ -1,0 +1,14 @@
+# Core Framework
+langchain
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+pydantic-settings
+pymysql
+jieba
+tiktoken
+
+# Bot
+nonebot2[fastapi]
+nonebot-adapter-onebot

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "LLM-Scribe"
+version = "0.1.0"
+description = "LangChain-driven group chat summarizer plugin for NoneBot / NapCat"
+readme = "README.md"
+authors = [
+  { name = "YTQin", email = "h2417185282@outlook.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["LangChain", "NoneBot", "NapCat", "Chat Summary", "LLM", "Memory"]
+dependencies = [
+  # Core
+  "langchain>=0.2.0",
+  "langchain-community>=0.2.0",
+  "pydantic-settings>=2.0",
+  "pydantic>=2.0",
+  "jieba>=0.42.1",
+  "tiktoken>=0.7.0",
+  "pymysql>=1.1.0",
+  # Bot Integration
+  "nonebot2[fastapi]>=2.2.0",
+  "nonebot-adapter-onebot>=2.4.3",
+  # Optional Providers
+  "langchain-openai>=0.1.0",
+  "langchain-anthropic>=1.0.0",
+  "langchain-google-genai>=3.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourname/LLM-Bot-Open"
+Documentation = "https://github.com/yourname/LLM-Bot-Open#readme"
+Issues = "https://github.com/yourname/LLM-Bot-Open/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm_bot*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+"llm_bot" = ["*.py", "*.txt", "*.md"]
+
+[tool.setuptools]
+zip-safe = false
