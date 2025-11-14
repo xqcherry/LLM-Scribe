@@ -1,7 +1,7 @@
 from llm_scribe.DB.chat_loader import get_group_msg
 from llm_scribe.memory.memory_short import load_memory_short
 from llm_scribe.memory.cache import load_chat_cache, get_group_msg_after, save_chat_cache
-from llm_scribe.memory.refresh import high_refresh, low_refresh
+from llm_scribe.memory.refresh import high_refresh, low_refresh, high_refresh_chunk
 from datetime import datetime, timezone
 
 def run(group_id, hours):
@@ -21,11 +21,15 @@ def run(group_id, hours):
 
     # 第一次运行：直接high
     if not cache or short["last_check_ts"] is None:
+        if len(msgs) > 250:
+            return high_refresh_chunk(group_id, msgs, hours)
         return high_refresh(group_id, msgs, hours)
 
     # 查询窗口大小变化(24h → 6h)：直接high
     last_hours = short["mem_json"].get("last_window_hours")
     if last_hours is not None and last_hours != hours:
+        if len(msgs) > 250:
+            return high_refresh_chunk(group_id, msgs, hours)
         return high_refresh(group_id, msgs, hours)
 
     # 从缓存获取旧消息
@@ -38,6 +42,8 @@ def run(group_id, hours):
 
     if hours > cache_window_hours + 0.1:
         full_msgs = get_group_msg(group_id, hours)
+        if len(full_msgs) > 250:
+            return high_refresh_chunk(group_id, full_msgs, hours)
         return high_refresh(group_id, full_msgs, hours)
 
     # 增量消息获取
@@ -57,6 +63,8 @@ def run(group_id, hours):
     deltaN = len(new_msgs)
 
     if deltaN >= 10:
+        if len(msgs) > 250:
+            return high_refresh_chunk(group_id, msgs, hours)
         return high_refresh(group_id, msgs, hours)
     # 少量增量 low
     return low_refresh(group_id, msgs, short)

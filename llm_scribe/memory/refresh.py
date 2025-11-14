@@ -3,7 +3,7 @@ from llm_scribe.memory.memory_long import save_memory_long
 from llm_scribe.memory.cache import save_chat_cache
 from llm_scribe.Prompt.prompt1 import create_prompt
 from llm_scribe.LLM.model import get_llm
-from llm_scribe.utils import display_summary, to_str, beautify_smy, base_info
+from llm_scribe.utils.tools import display_summary, to_str, beautify_smy, base_info, chunk_msgs
 from datetime import datetime, timezone
 
 model = get_llm()
@@ -37,6 +37,47 @@ def high_refresh(group_id, msgs, hours):
     final_summary = display_summary(summary, meta)
     return final_summary
 
+def high_refresh_chunk(group_id, msgs, hours):
+    short = load_memory_short(group_id)
+    pool = short["mem_json"].copy()
+
+    # 切片
+    chunks = list(chunk_msgs(msgs, chunk_size=250, overlap=50))
+
+    # 每段做小摘要
+    clean_pool = {"concepts": [], "events": [], "quotes": [], "last_summary": ""}
+    chunk_summaries = []
+    for idx, c in enumerate(chunks, 1):
+        meta = base_info(c)
+        prompt = create_prompt(clean_pool, c, meta)
+        resp = to_str(model.invoke(prompt))
+        chunk_summary = beautify_smy(resp)
+
+        # 包装为“分段摘要 N”
+        chunk_summaries.append(
+            f"=== 分段摘要（{idx}/{len(chunks)}）===\n{chunk_summary}\n"
+        )
+
+    # cache
+    start_ts = datetime.fromtimestamp(msgs[0]["time"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    end_ts = datetime.fromtimestamp(msgs[-1]["time"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    save_chat_cache(group_id, msgs, start_ts, end_ts)
+
+    # 更新短期记忆
+    all_summary_text = "\n".join(chunk_summaries)
+    pool["last_summary"] = all_summary_text
+    pool["last_window_hours"] = hours
+    save_memory_short(group_id, pool, full_refresh=True)
+
+    # 保存长期记忆
+    save_memory_long(group_id, all_summary_text)
+
+    # 基础信息
+    info = base_info(msgs)
+    final_summary = display_summary(all_summary_text, info)
+
+    return final_summary
+
 def low_refresh(group_id, msgs, short):
     summary = short["mem_json"].get("last_summary", "")
 
@@ -58,21 +99,3 @@ def low_refresh(group_id, msgs, short):
     final_summary = display_summary(summary, meta)
     return final_summary
 
-# # 中量更新
-# def mid_refresh(group_id, new_msgs, short, cache):
-#     pool = short["mem_json"] # short片段是上次记忆
-#     old_summary = pool.get("last_summary", "")
-#     # 语义池部分
-#     # 生成新摘要: summary + increasing
-#     prompt = append_prompt(new_msgs, pool)
-#     reponse = to_str(model.invoke(prompt))
-#     append_summary = beautify_smy(reponse)
-#     # 新摘要拼接
-#     new_summary = (old_summary + "\n" + append_summary).strip()
-#     # 只保存短期记忆
-#     pool["last_summary"] = new_summary
-#     save_memory_short(group_id, pool, full_refresh=False)
-#     # 生成新的基础信息meta
-#     meta = base_info(cache["msgs"])
-#     final_summary = display_summary(new_summary, meta)
-#     return final_summary
