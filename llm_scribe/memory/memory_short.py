@@ -4,12 +4,10 @@ from llm_scribe.DB.connection import get_connection
 # mem_json结构
 STRUCTURE = {
     "concepts": [],
-    "facts": [],
     "events": [],
     "quotes": [],
-    "topics": [],
     "last_summary": "",
-    "last_update_ts": None
+    "last_window_hours": None,
 }
 # 加载短期记忆
 def load_memory_short(group_id):
@@ -24,27 +22,25 @@ def load_memory_short(group_id):
     cur.close()
     conn.close()
 
-    if not row:
+    if not row or not row["mem_json"]:
         return {
             "mem_json": STRUCTURE.copy(),
             "last_check_ts": None,
             "last_full_refresh_ts": None
         }
-    if not row["mem_json"]:
-        semantic = STRUCTURE.copy()
-    else:
-        try:
-            semantic = json.loads(row["mem_json"])
-        except:
-            semantic = STRUCTURE.copy()
-    for key in STRUCTURE:
-        semantic.setdefault(key, STRUCTURE[key])
-    data = {
-        "mem_json": semantic,
+    try:
+        mem_json = json.loads(row["mem_json"])
+    except:
+        mem_json = STRUCTURE.copy()
+
+    for k, val in STRUCTURE.items():
+        mem_json.setdefault(k, val)
+
+    return {
+        "mem_json": mem_json,
         "last_check_ts": row["last_check_ts"],
         "last_full_refresh_ts": row["last_full_refresh_ts"],
-    } # 短期记忆格式
-    return data
+    }
 # 更新短期记忆
 def save_memory_short(group_id, mem_json, full_refresh=False):
     conn = get_connection()

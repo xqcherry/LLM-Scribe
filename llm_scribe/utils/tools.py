@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
+from llm_scribe.Prompt.prompt3 import EXTRACT
+from llm_scribe.LLM.model import get_llm
+from llm_scribe.memory.memory_short import STRUCTURE
+import re, json
 
-import re
+model = get_llm()
 
 def to_str(text):
     if text is None:
@@ -66,13 +70,31 @@ def display_summary(summary, meta):
     info = info_to_str(meta)
     return info + "\n" + summary
 # 构建mem_json
-def build_mem_json(short, summary_text):
-    if not isinstance(short, dict):
-        short = STRUCTURE.copy()
-    else:
-        for k, v in STRUCTURE.items():
-            short.setdefault(k, v if isinstance(v, list) else v)
+def build_mem_json(msgs):
 
-    short["last_summary"] = summary_text
+    data = STRUCTURE.copy()
+    if not msgs:
+        return data;
 
-    return short
+    lines = []
+    for m in msgs:
+        t = m.get("time")  # 时间戳
+        u = m.get("sender_nickname", m.get("user_id"))  # 优先昵称，其次用户ID
+        txt = m.get("raw_message")  # 消息内容
+        lines.append(f"[{t}] {u}: {txt}")
+
+    chat_text = "\n".join(lines)
+
+    prompt = EXTRACT.replace("{CHAT_MESSAGES}", chat_text)
+    response = to_str(model.invoke(prompt))
+
+    try:
+        data = json.loads(response)
+    except:
+        data = {
+            "concepts": [],
+            "events": [],
+            "quotes": [],
+        }
+
+    return data

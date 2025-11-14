@@ -1,10 +1,9 @@
-from dotenv import load_dotenv
 from llm_scribe.config import settings
 from llm_scribe.main.manger import run
 
 if __name__ == "__main__":
     group_id = 1017750994
-    hours = 6
+    hours = 18
     print(f"[LLM-Scribe] 独立运行模式启动 (group_id={group_id}, hours={hours})")
     result = run(group_id=group_id, hours=hours)
     print("\n=== 摘要结果 ===\n")
