@@ -9,6 +9,17 @@ smy_cmd = on_command("sum", aliases={"summary"}, block=True)
 
 logger.success("[llm_scribe] 命令 sum/summary 已注册")
 
+HELP_TEXT = (
+    "【LLM-Scribe 摘要帮助】\n"
+    "用法：\n"
+    "  /sum              → 默认近 6 小时摘要\n"
+    "  /sum 12           → 摘要最近 12 小时消息\n"
+    "  /sum day / d      → 摘要最近 24 小时（相当于 /sum 24）\n"
+    "  /sum help / ls    → 显示此帮助\n"
+    "\n"
+    "范围：1~24 小时，不支持浮点数\n"
+)
+
 @smy_cmd.handle()
 async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
 
@@ -18,14 +29,21 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
     text = args.extract_plain_text().strip()
     hours = 6
 
-    if text:
+    if text.lower() in ["help", "h", "ls", "?", "帮助"]:
+        await smy_cmd.send(HELP_TEXT)
+        return
+
+    if text.lower() in ["day", "d"]:
+        hours = 24
+
+    elif text:
         try:
             hours = int(text)
             if hours <= 0 or hours > 24:
-                await smy_cmd.send("无效参数，请输入 1~24 之间的数字，例如：/sum 6")
+                await smy_cmd.send("只支持1~24h间整数查询")
                 return
         except ValueError:
-            await smy_cmd.send("参数必须是数字，例如：/sum 6")
+            await smy_cmd.send("参数必须是整数，例如：/sum 6\n输入 /sum ls 查看用法")
             return
 
     try:
