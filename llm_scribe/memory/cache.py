@@ -1,5 +1,5 @@
 import json, pymysql
-from plugins.llm_scribe.DB.connection import get_connection
+from ..DB.connection import get_connection
 
 def load_chat_cache(group_id):
     conn = get_connection()

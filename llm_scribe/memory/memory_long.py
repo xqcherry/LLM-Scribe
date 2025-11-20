@@ -1,4 +1,4 @@
-from plugins.llm_scribe.DB.connection import get_connection
+from ..DB.connection import get_connection
 
 def save_memory_long(group_id, summary_text):
     conn = get_connection()

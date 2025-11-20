@@ -1,9 +1,9 @@
-from plugins.llm_scribe.memory.memory_short import load_memory_short, save_memory_short
-from plugins.llm_scribe.memory.memory_long import save_memory_long
-from plugins.llm_scribe.memory.cache import save_chat_cache
-from plugins.llm_scribe.Prompt.prompt1 import create_prompt
-from plugins.llm_scribe.LLM.model import model
-from plugins.llm_scribe.utils.tools import display_summary, to_str, beautify_smy, base_info, chunk_msgs
+from ..memory.memory_short import load_memory_short, save_memory_short
+from ..memory.memory_long import save_memory_long
+from ..memory.cache import save_chat_cache
+from ..Prompt.prompt1 import create_prompt
+from ..LLM.model import model
+from ..utils.tools import display_summary, to_str, beautify_smy, base_info, chunk_msgs
 from datetime import datetime, timezone
 
 # 全量更新, 将生成的summary和 mem_json存入长期，短期记忆,cache

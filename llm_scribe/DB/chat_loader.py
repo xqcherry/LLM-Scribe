@@ -1,5 +1,5 @@
-from plugins.llm_scribe.DB.connection import get_connection
-from plugins.llm_scribe.utils.filter import CQ_filter
+from ..DB.connection import get_connection
+from ..utils.filter import CQ_filter
 import pymysql
 # 从群获取信息
 def get_group_msg(group_id, hours: int = 24):

@@ -1,5 +1,5 @@
 from langchain.messages import SystemMessage, HumanMessage
-from plugins.llm_scribe.Prompt.bascial_prompt import BASE_RULES, OUTPUT_RULES
+from ..Prompt.bascial_prompt import BASE_RULES, OUTPUT_RULES
 
 def create_prompt(mem_json, msgs, meta):
     time_span = meta["time_span"]

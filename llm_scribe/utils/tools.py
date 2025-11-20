@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from plugins.llm_scribe.Prompt.prompt3 import EXTRACT
-from plugins.llm_scribe.LLM.model import model
-from plugins.llm_scribe.memory.memory_short import STRUCTURE
+from ..Prompt.prompt3 import EXTRACT
+from ..LLM.model import model
+from ..memory.memory_short import STRUCTURE
 import re, json
 
 def to_str(text):

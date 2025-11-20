@@ -1,5 +1,5 @@
 import json, pymysql
-from plugins.llm_scribe.DB.connection import get_connection
+from ..DB.connection import get_connection
 
 # mem_json结构
 STRUCTURE = {

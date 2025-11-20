@@ -1,8 +1,8 @@
-from plugins.llm_scribe.DB.chat_loader import get_group_msg
-from plugins.llm_scribe.memory.memory_short import load_memory_short
-from plugins.llm_scribe.memory.cache import load_chat_cache, get_group_msg_after, save_chat_cache
-from plugins.llm_scribe.memory.refresh import high_refresh, low_refresh, high_refresh_chunk
-from plugins.llm_scribe.utils.filter import filter_msgs
+from ..DB.chat_loader import get_group_msg
+from ..memory.memory_short import load_memory_short
+from ..memory.cache import load_chat_cache, get_group_msg_after, save_chat_cache
+from ..memory.refresh import high_refresh, low_refresh, high_refresh_chunk
+from ..utils.filter import filter_msgs
 from datetime import datetime, timezone
 
 IGNORE_QQ = {3674697536, 2303866129}
