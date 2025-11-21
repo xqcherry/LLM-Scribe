@@ -99,4 +99,3 @@ async def send_parts(bot, event, parts):
             continue
         await bot.send(event, p)
         await asyncio.sleep(1)
-

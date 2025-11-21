@@ -1,4 +1,5 @@
 import json, pymysql
+from datetime import datetime
 from ..DB.connection import get_connection
 
 def load_chat_cache(group_id):
@@ -15,19 +16,28 @@ def load_chat_cache(group_id):
 
     if not row:
         return None
+
+    start_ts = int(row["start_ts"].timestamp())
+    end_ts = int(row["end_ts"].timestamp())
     data = {
         "msgs": json.loads(row["msg_json"]),
-        "start_ts": row["start_ts"],
-        "end_ts": row["end_ts"],
+        "start_ts": start_ts,
+        "end_ts": end_ts,
     } # dict
     return data
 
 def save_chat_cache(group_id, msgs, start_ts, end_ts):
+
+    if isinstance(start_ts, datetime):
+        start_ts = int(start_ts.timestamp())
+    if isinstance(end_ts, datetime):
+        end_ts = int(end_ts.timestamp())
+
     conn = get_connection()
     cur = conn.cursor()
     sql = """
         INSERT INTO chat_cache(group_id, msg_json, start_ts, end_ts)
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s))
         ON DUPLICATE KEY UPDATE 
             msg_json=VALUES(msg_json),
             start_ts=VALUES(start_ts),
