@@ -1,382 +1,253 @@
-# LLM-Scribe —— LangChain 驱动的群聊智能摘要系统
+# LLM-Scribe · LangChain 驱动的群聊智能摘要管家
 
-> 一款基于 **LangChain 智能语义管线** 的群聊摘要与记忆系统  
-> 可独立运行，也可作为 **NoneBot 插件** 接入 NapCat 等消息框架，  
-> 实现 “消息 → 语义结构 → 摘要生成 → 记忆沉淀” 的自动化闭环
+> 将「消息采集 → 语义抽取 → 分层记忆 → 自适应刷新 → 高质量摘要」串成闭环，可独立运行，也能嵌入 NoneBot/NapCat 实时响应群聊指令。
 
 ---
 
-## 🚀 项目简介
-
-**LLM-Scribe** 以 **LangChain** 为核心语义调度框架，  
-构建了一个高可扩展、可多模型切换的 **群聊语义摘要系统**。  
-
-系统从 MySQL 读取群聊消息，通过 LangChain 管线完成语义抽取、筛选与融合，  
-再结合多层记忆机制与自适应刷新策略，生成结构化、可追溯的高质量摘要。
-
-> **NoneBot + NapCat** 仅承担消息输入输出与命令触发的接口作用，  
-> **LangChain、语义记忆与多模型封装** 才是本项目的核心。
+## 1. 项目概览
+**LLM-Scribe** 是一个围绕 LangChain 构建的群聊摘要系统，支持多模型切换、结构化语义存储、分层记忆与可追溯的历史版本。核心目标：
+- 自动拉取 MySQL 中的群聊数据，清洗噪声，构造语义上下文；
+- 调度主流 LLM（Moonshot / OpenAI / DeepSeek / Qwen / GLM / Claude / Gemini / Ollama）生成高信息量摘要；
+- 将结果写入短期、长期记忆，结合缓存策略降低 Token 消耗；
+- 对接 NoneBot 指令，实现“随喊随有”的聊天复盘体验。
 
 ---
 
-## 🧩 技术架构亮点
-
-### 🌐 LangChain 多模型语义中枢
-- 统一封装各大模型（Moonshot / OpenAI / DeepSeek / Qwen / GLM / Claude / Gemini / Ollama）。  
-- 通过环境变量 `LLM_PROVIDER` 动态切换模型，无需修改代码。  
-- 所有输出均遵循 LangChain ChatModel 接口规范，可无缝集成至其他 LangChain 流程中。  
-
----
-
-### 🧠 分层记忆系统（Layered Memory）
-
-通过 **分层记忆结构** 保持摘要的上下文一致性与生成效率：
-
-- **短期记忆（memory_short）**  
-  存储最近语义块与摘要内容，维持“当前语境”的连续性；  
-  每次摘要更新检查时间戳与语义池，用于增量生成。  
-- **长期记忆（memory_long）**  
-  存储版本化摘要，用于历史回溯与语义演化分析；  
-  让系统不仅“记得当前”，还能“理解过去”。  
-- **缓存层（chat_cache）**  
-  缓存近 24 小时消息快照，避免重复查询数据库；  
-  通过消息去重与窗口滑动显著降低 I/O 与 token 成本。  
+## 2. 核心能力
+- **多模型 LangChain 中枢**：通过 `LLM_PROVIDER` 动态切换模型，所有调用遵循 ChatModel 接口规范，可与其他 LangChain Chain 复用。
+- **分层记忆引擎**：短期记忆维护最新语义池，长期记忆记录版本化摘要，`chat_cache` 避免重复查询 MySQL。
+- **自适应刷新策略**：根据窗口、增量消息与请求粒度自动选择高/低刷新，并在大窗口场景中自动切片分段摘要。
+- **语义抽取器**：在正式生成摘要前，先用 `Prompt/prompt3.py` 将对话拆解为 `concepts/events/quotes`，提高一致性与可解释性。
+- **插件化部署**：既能 `python -m llm_scribe` 独立运行，也可放入 NoneBot `plugins/` 目录，用 NapCat/OneBot 触发 `/sum` 指令。
 
 ---
 
-### ⚙️ 自适应刷新策略（Adaptive Refresh）
-
-为平衡模型调用成本与摘要时效，系统采用三级刷新机制：
-
-| 模式   | 触发条件                           | 行为                           |
-| ------ | ---------------------------------- | ------------------------------ |
-| `high` | 新消息量大 / 超过 24h / 每日 23:00 | 全量摘要，重构记忆与长期归档   |
-| `mid`  | 小批增量 / 语义差异明显            | 增量摘要，附加到上次结果       |
-| `low`  | 新消息少 / 内容相似                | 直接复用上次摘要，仅更新时间戳 |
-
-这种自适应策略让模型调用既智能又经济：  
-**高频对话不浪费 token，低频群聊也能保持语义新鲜度。**
-
----
-
-### 🧬 语义抽取与筛选机制（Semantic Extraction & Selection）
-
-基于 LangChain Prompt 管线，系统将原始群聊消息转化为结构化语义块：
-
-1. **语义抽取**：  
-   使用 LLM 将消息解析为 concepts、events、quotes、topics 等 JSON 结构。  
-2. **语义合并**：  
-   与短期记忆中的语义池对齐，自动去重、排序与权重更新。  
-3. **语义筛选**：  
-   从语义池中挑选与当前窗口最相关的内容，以最小上下文生成最优摘要。  
-
-这种结构化语义处理使摘要更具 **主题聚合性与语义连贯性**。  
+## 3. 系统架构与数据流
+```
+MySQL (messages_event_logs)
+        │
+        ▼
+DB/chat_loader.py  ——>  utils/filter.py  (CQ 码 & 噪声清洗)
+        │
+        ▼
+memory/cache.py          memory/memory_short.py        memory/memory_long.py
+   (最近窗口缓存)             (短期语义池)                       (版本归档)
+        │
+        ▼
+Prompt/prompt3.py  →  utils/tools.build_mem_json()  →  Prompt/prompt1.py
+        │                                                 │
+        └─────────────>  LangChain ChatModel  <───────────┘
+                                  │
+                                  ▼
+refresh.high_refresh() / high_refresh_chunk() / low_refresh()
+                                  │
+                                  ▼
+display_summary()  →  标准化输出（含基础信息 + 纯摘要文本）
+```
 
 ---
 
-### 🧰 模块化设计（Modular Architecture）
-
-**LLM-Scribe** 采用完全模块化的架构，每个组件都可独立替换或扩展：
-
-- **数据库层（DB）**：负责消息加载（支持 MySQL、REST API 等）。  
-- **语义层（Semantic）**：负责语义抽取与合并逻辑，可替换不同 Prompt 模板或算法。  
-- **模型层（LLM）**：基于 LangChain 的统一封装，支持任意兼容模型。  
-- **刷新层（Refresh）**：负责 high / mid / low 自适应刷新逻辑。  
-- **接口层（Interface）**：提供 NoneBot + NapCat 交互，也可独立运行或嵌入其他系统。  
+## 4. 目录速览
+```
+llm_scribe/
+├── __main__.py            # 独立运行入口
+├── config.py              # Pydantic Settings，统一读取 .env
+├── DB/
+│   ├── connection.py      # MySQL 连接封装
+│   └── chat_loader.py     # 消息查询与基础清洗
+├── LLM/
+│   └── model.py           # LangChain ChatModel 统一工厂
+├── main/manger.py         # 主流程：窗口判断、刷新策略
+├── memory/
+│   ├── cache.py           # chat_cache 读写
+│   ├── memory_short.py    # 短期记忆 + 时间戳维护
+│   ├── memory_long.py     # 摘要版本归档
+│   └── refresh.py         # high / chunk / low 刷新策略
+├── Prompt/
+│   ├── bascial_prompt.py  # 行为准则与输出模板
+│   ├── prompt1.py         # 摘要生成 Prompt
+│   └── prompt3.py         # 语义抽取 Prompt
+└── utils/
+    ├── filter.py          # CQ 码过滤
+    └── tools.py           # meta 构建、chunk、摘要美化等工具
+```
 
 ---
 
-## ⚙️ 安装与运行（Installation & Usage）
+## 5. 快速开始
+### 5.1 环境要求
+| 组件 | 最低版本 | 说明 |
+| --- | --- | --- |
+| Python | 3.10 | 建议 3.10~3.12 |
+| MySQL | 5.7 / 8.0 | 消息与记忆持久化 |
+| NoneBot2 | 2.2 | 可选：命令入口 |
+| NapCat (OneBot v11) | 2.0 | 可选：QQ 网关 |
+| 操作系统 | Windows / Linux / macOS | 三平台均可 |
 
-### 🧩 环境要求
-
-| 组件      | 推荐版本                | 说明                      |
-| --------- | ----------------------- | ------------------------- |
-| Python    | ≥ 3.10                  | 建议使用 3.10 ~ 3.12      |
-| MySQL     | ≥ 5.7 / 8.0             | 存储消息与记忆数据        |
-| NoneBot 2 | ≥ 2.2.0                 | （可选）命令接口层        |
-| NapCat    | ≥ 2.0                   | （可选）消息网关，QQ 接入 |
-| 操作系统  | Windows / Linux / macOS | 全平台支持                |
-
----
-
-###  1️⃣ 克隆项目
-
+### 5.2 克隆与安装
 ```bash
 git clone https://github.com/xqcherry/LLM-Scribe.git
 cd LLM-Scribe
-```
-
-###  2️⃣ 创建虚拟环境并安装依赖
-
-```
-python -m venv venv
-source venv/bin/activate    # macOS/Linux
-venv\Scripts\activate       # Windows
+python -m venv .venv
+.\.venv\Scripts\activate  # Windows
+source .venv/bin/activate # macOS/Linux
 pip install -U pip
 pip install -e .
+# 或 pip install -r requirements.txt
 ```
 
-> `-e .` 表示以开发模式安装当前包（即 llm_scribe）
-
-或使用简版依赖安装：
-
-```
-pip install -r requirements.txt
-```
-
-------
-
-### 3️⃣ 配置环境变量（.env）
-
-LLM-Scribe 使用 `.env` 文件统一管理模型 API 密钥与数据库配置
-
-1. 在项目根目录复制示例文件：
-
+### 5.3 配置 `.env`
+复制示例并填写模型/数据库信息：
 ```bash
 cp .env.example .env
 ```
-
-2. 打开 `.env` 并填写核心字段（以下为最简可用示例，使用 Moonshot 模型）：
-
-```
+```ini
 LLM_PROVIDER=moonshot
-
-# Moonshot
-MOONSHOT_API_KEY=你的APIKey
+MOONSHOT_API_KEY=your_key
 MOONSHOT_MODEL=moonshot-v1-32k
 MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
 
-# MySQL 数据库
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=your_password
 MYSQL_DB=diting_qq_bot
 ```
+只需保证对应 Provider 的 API Key 不为空，其余会被忽略。切换模型时改 `LLM_PROVIDER` 即可（支持 `openai/deepseek/qwen/glm/claude/gemini/ollama` 等）。
 
-3. 如需使用其他模型（OpenAI / DeepSeek / Qwen / GLM / Claude / Gemini / Ollama 等），
-	 请参考完整模板文件 `.env.example`，取消对应段落注释并填写各自 API Key 和 Base URL。
+### 5.4 初始化数据库
+| 表 | 作用 |
+| --- | --- |
+| `messages_event_logs` | 原始群聊消息 |
+| `chat_cache` | 最近窗口的消息快照 |
+| `memory_short` | 短期记忆 + 时间戳 |
+| `memory_long` | 摘要历史版本 |
 
->  提示：
->
-> - 未填写的 API Key 会被自动忽略，不影响启动
-> - 你可以随时修改 `LLM_PROVIDER=openai` 等来切换默认模型
-
-------
-
-### 4️⃣ 初始化数据库
-
-执行以下 SQL（或使用 sql/schema.sql）：
-
+可直接执行根目录 `sql/schema.sql`（如需自建，见下例）：
 ```mysql
-CREATE TABLE IF NOT EXISTS `messages_event_logs` (
-  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
-  `message_type` VARCHAR(20) NOT NULL,         -- 'group' / 'private'
-  `group_id` BIGINT NOT NULL,                  -- 群聊ID
-  `user_id` BIGINT NOT NULL,                   -- 发送者ID
-  `sender_nickname` VARCHAR(100) DEFAULT NULL, -- 昵称
-  `raw_message` TEXT NOT NULL,                 -- 原始消息文本
-  `time` INT NOT NULL,                         -- 消息时间戳（Unix秒）
-  KEY `idx_group_time` (`group_id`, `time`),   -- 查询优化
-  KEY `idx_type_time` (`message_type`, `time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE messages_event_logs(
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  message_type VARCHAR(20) NOT NULL,
+  group_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  sender_nickname VARCHAR(100),
+  raw_message TEXT NOT NULL,
+  time INT NOT NULL,
+  KEY idx_group_time (group_id,time)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-```mysql
-CREATE TABLE `chat_cache` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `group_id` bigint NOT NULL,
-  `msg_json` longtext NOT NULL,
-  `start_ts` timestamp NOT NULL,
-  `end_ts` timestamp NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_group` (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-```
+### 5.5 运行方式
+- **独立模式**
+  ```bash
+  python -m llm_scribe
+  # 默认示例：group_id=123454325, hours=23，可在 __main__.py 中修改
+  ```
+- **NoneBot 插件模式**
+  1. 在 NoneBot 项目 `.env` 内配置同样的 LLM & MySQL 字段；
+  2. 将 `llm_scribe/` 拷贝到 `your_nonebot_project/plugins/`；
+  3. `pyproject.toml` 中设置：
+     ```toml
+     [tool.nonebot]
+     plugin_dirs = ["plugins"]
+     ```
+  4. 安装依赖：
+     ```bash
+     pip install nonebot2[fastapi] nonebot-adapter-onebot langchain langchain-community pymysql jieba python-dotenv
+     ```
+  5. 运行 `nb run`，在群内使用 `/sum` 或 `/summary 6` 触发。
 
-```mysql
-CREATE TABLE `memory_short` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `group_id` bigint NOT NULL,
-  `mem_json` longtext NOT NULL,
-  `last_check_ts` timestamp NOT NULL,
-  `last_full_refresh_ts` timestamp NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_group` (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-```
-
-```mysql
-CREATE TABLE `memory_long` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `group_id` bigint NOT NULL,
-  `ver` int NOT NULL,
-  `summary_text` longtext NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_group_version` (`group_id`,`ver`),
-  KEY `idx_group` (`group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-```
-
-------
-
-### 5️⃣ 独立运行模式
-
-配置好`.env`后直接运行`__main__.py`
-
-------
-
-### 6️⃣ 作为 NoneBot 插件集成
-
-> LLM-Scribe 可以作为 **NoneBot 插件** 使用，用于在群聊中直接触发摘要指令。  
-> 当前版本尚未上架 NoneBot 官方插件商店，仅支持 **本地导入安装**。
-
-在你的 NoneBot 项目中：
-
-1. 在 NoneBot 根目录的`.env`文件配置好字段
-
-```
-LLM_PROVIDER=moonshot
-
-# Moonshot
-MOONSHOT_API_KEY=你的APIKey
-MOONSHOT_MODEL=moonshot-v1-32k
-MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
-
-# MySQL 数据库
-MYSQL_HOST=127.0.0.1
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-MYSQL_DB=diting_qq_bot
-```
-
-2. 将整个 `llm_scribe/` 文件夹（或仓库根目录）放入你的 NoneBot 项目的plugins下
-
-```
-your_nonebot_project/
-├── .env
-├── pyproject.toml
-└── plugins/
-    └── llm_scribe/ 
-```
-
-3. 在 `pyproject.toml` 中添加路径：
-
-```
-[tool.nonebot]
-plugin_dirs = ["plugins"]
-```
-
-4. 确保依赖安装完整
-
-```
-pip install -U nonebot2[fastapi] nonebot-adapter-onebot
-pip install langchain langchain-community openai pymysql jieba python-dotenv
-```
-
-运行：
-
-```
-nb run
-```
-
-群聊命令：
-
-```
-/sum
-/summary 6
-```
-
-> 详细操作请看官方文档: [nonebot官方文档](https://nonebot.dev/docs/)
-
-------
-
-### 7️⃣ Docker 部署（可选）
-
-```
+### 5.6 Docker（可选）
+```dockerfile
 FROM python:3.10-slim
 WORKDIR /app
 COPY . /app
 RUN pip install -U pip && pip install -e .
-CMD ["python", "-m", "llm_scribe.main.manger"]
+CMD ["python","-m","llm_scribe.main.manger"]
+```
+```bash
 docker build -t llm-scribe .
 docker run --env-file .env llm-scribe
 ```
 
-------
+---
 
-## 📊 示例输出
+## 6. 工作流细节
+### 6.1 消息采集与过滤
+- `DB/chat_loader.py` 通过 `pymysql` 从 `messages_event_logs` 拉取最近 `hours` 小时群聊；
+- `utils/filter.py` 针对 QQ `CQ:` 码、表情、图片等做可读化映射，保留有效文本。
 
+### 6.2 语义抽取 → 摘要生成
+1. `utils/tools.build_mem_json()` 将消息拼接成时序文本，并调用 `Prompt/prompt3.py (EXTRACT)` 获取 `concepts/events/quotes`；
+2. `Prompt/prompt1.py` 把基础信息 + 语义片段 + 原始对话联合喂给 LLM；
+3. `LLM/model.py` 根据 `LLM_PROVIDER` 构造对应的 LangChain `ChatModel`；
+4. `utils/tools.beautify_smy()` 做输出清洗，确保“整体摘要 / 话题总结”格式稳定。
+
+### 6.3 分层记忆 + 刷新策略
+- **短期记忆 (`memory_short`)**：保存最近一次摘要及语义池，允许无损增量；
+- **长期记忆 (`memory_long`)**：每次高刷都会写入一个自增版本号，方便回溯；
+- **缓存 (`chat_cache`)**：保存上次窗口的消息快照，减少数据库读取和 Token 利用；
+- **刷新策略 (`main/manger.py`)**：
+  - 首次或窗口变更 → `high_refresh`，必要时 `high_refresh_chunk` 将消息按 250 条分段摘要；
+  - 无增量或增量不足 10 条 → `low_refresh` 直接复用上一份摘要，仅更新时间戳；
+  - 大窗口/大增量 → 重新高刷，保证语义一致性。
+
+---
+
+## 7. 配置详解
+`llm_scribe/config.py` 使用 Pydantic Settings，支持以下关键字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| `LLM_PROVIDER` | 选择模型：`moonshot/openai/deepseek/qwen/glm/claude/gemini/ollama` |
+| `*_API_KEY` / `*_BASE_URL` / `*_MODEL` | 各 Provider 的凭据、模型名与 Base URL |
+| `MYSQL_HOST/PORT/USER/PASSWORD/DB` | MySQL 连接信息 |
+
+若启用 Claude/Gemini，对应 LangChain 依赖需要手动安装：`pip install langchain-anthropic` / `langchain-google-genai`。
+
+---
+
+## 8. 开发者提示
+- **Prompt 调优**：调整 `Prompt/bascial_prompt.py` 的规则段或 `Prompt/prompt1.py` 的 HumanMessage 内容即可改变输出格式。
+- **自定义消息源**：若不使用 MySQL，可在 `DB/chat_loader.py` 中替换为 REST/CSV/消息队列，并保持返回 `{user_id, sender_nickname, raw_message, time}` 结构。
+- **扩展刷新策略**：`memory/refresh.py` 中的 `high_refresh`/`low_refresh` 可根据需要扩展 `mid_refresh`、引入命令行参数等。
+- **复用工具**：`utils/tools.chunk_msgs()` 可在其他长上下文任务里复用，快速切片对话。
+
+---
+
+## 9. 示例输出
 ```
 基础信息：
-- 时段：2025-11-10 10:00 ~ 12:00
-- 参与：8人，302条消息
+- 时段：2025-11-10 10:00~12:00
+- 参与：8人，共 302 条消息
+- 时长：约2小时
 
-整体摘要：
-群成员讨论了新功能部署、模型接口封装和摘要准确性问题。
-核心话题聚焦在 LangChain 管线、MySQL 数据读取与多模型切换。
+整体摘要
+围绕 LangChain 管线重构、模型接口封装与摘要准确性校验展开讨论；成员同步了缓存策略、数据库查询优化和上线计划。
 
-话题总结：
-技术开发（45%）—— 模型封装、缓存逻辑优化
-摘要准确性（30%）—— Prompt 模板调优与语义筛选改进
-团队沟通（25%）—— 任务分工与版本同步
+话题总结
+技术开发（占比45%）
+- 摘要：聚焦多模型封装、NapCat 网关升级以及缓存滑动窗口实现。
+- 关键点：LangChain 抽取器调试、数据库索引补齐、NoneBot 插件路径调整
+- 结论：统一使用 `LLM_PROVIDER` 切换模型并在测试群验证。
+
+摘要准确性（占比30%）
+- 摘要：讨论 prompt 调优与高/低刷新阈值设定。
+- 关键点：概念池去重、事件排序、分段摘要阈值
+- 结论：先上线 chunk 模式，再观察 token 消耗。
 ```
 
-------
+---
 
-## 🧑‍💻 开发者指南（Developer Guide）
+## 10. 路线图 & 贡献
+- [ ] 提供官方 `mid_refresh` 增量模式
+- [ ] 支持 PostgreSQL/SQLite 配置模板
+- [ ] 发布 NoneBot 插件商店版本
+- [ ] 引入可视化控制台（FastAPI + Tailwind）
 
-### 🧬 调整 Prompt 模板
+欢迎 Issue / PR，一起把群聊摘要体验做到极致。如果项目对你有帮助，别忘了点亮 ⭐。
 
-编辑 `llm_scribe/Prompt/base.py` 可修改生成格式与内容结构。
+---
 
-### 🧠 更换数据库源
-
-替换 `llm_scribe/DB/connection.py` 中的连接配置即可支持 PostgreSQL、SQLite 或 REST 接口。
-
-### 🧩 官方文档与相关资源
-
-#### NoneBot 官方资源
-
-[nonebot官方文档](https://nonebot.dev)
-
-[命令行工具（nb CLI）](https://cli.nonebot.dev/docs/)
-
-[GitHub 仓库](https://github.com/nonebot/nonebot2)
-
-#### NapCat（OneBot v11）官方资源
-
-[官方文档（NapCat QQ 协议适配器）](https://github.com/NapNeko/NapCatQQ)
-
-[OneBot v11 协议规范](https://github.com/botuniverse/onebot-11)
-
-[ NoneBot OneBot 适配器](https://github.com/nonebot/adapter-onebot)
-
-#### LLM 与框架生态资源
-
-[LangChain](https://docs.langchain.com/oss/python/langchain/overview)
-
-[Moonshot AI](https://www.moonshot.cn/)
-
-[OpenAI API](https://platform.openai.com/docs/api-reference/introduction)
-
-------
-
-## 📜 License
-
-本项目采用 **MIT License**
-
-------
-
-## 🌟 支持与贡献
-
-欢迎提交 Issue 或 PR！
-如果本项目对你有帮助，请给一个 ⭐ Star，
-帮助更多人发现 **LLM-Scribe** 🧠✨
+## 11. 许可证
+本项目以 **MIT License** 发布，详情见 `LICENSE`。
