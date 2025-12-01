@@ -50,10 +50,11 @@ LLM-Scribe 是一个适配 NoneBot + OneBot (QQ) 的群聊摘要插件。它会�
 | `DB_CHARSET` | 字符集（例如 `utf8mb4`） |
 | `MOONSHOT_API_KEY` | Moonshot LLM 的 API Key |
 
-示例：`config.env.example` 已提供原先代码中的占位值，可复制后按需修改：
+示例：`config.env.example` 提供占位符配置，复制后在 `.env` 中填入真实值：
 ```
 cp config.env.example .env
 ```
+（`.env` 已加入 `.gitignore`，真实密钥仅保存在本地环境。）
 
 使用方式
 --------
