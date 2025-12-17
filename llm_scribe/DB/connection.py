@@ -1,35 +1,18 @@
-import os
 import pymysql
 
-ENV_MAPPING = {
-    "host": "DB_HOST",
-    "port": "DB_PORT",
-    "user": "DB_USER",
-    "password": "DB_PASSWORD",
-    "database": "DB_NAME",
-    "charset": "DB_CHARSET",
-}
+from ..config import get_config
 
 
 def _load_db_config():
-    """Read connection settings from environment variables."""
-    config = {}
-    missing = []
-
-    for key, env_key in ENV_MAPPING.items():
-        value = os.getenv(env_key)
-        if value is None:
-            missing.append(env_key)
-        else:
-            config[key] = value
-
-    if missing:
-        raise RuntimeError(
-            f"Missing database configuration environment variables: {', '.join(missing)}"
-        )
-
-    config["port"] = int(config["port"])
-    return config
+    cfg = get_config()
+    return {
+        "host": cfg.db_host,
+        "port": int(cfg.db_port),
+        "user": cfg.db_user,
+        "password": cfg.db_password,
+        "database": cfg.db_name,
+        "charset": cfg.db_charset,
+    }
 
 
 def get_connection():
