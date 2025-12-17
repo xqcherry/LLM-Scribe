@@ -1,24 +1,27 @@
 from ..memory.memory_short import load_memory_short, save_memory_short
 from ..memory.memory_long import save_memory_long
 from ..memory.cache import save_chat_cache
-from ..Prompt.create_prompt import create_prompt
+from ..Prompt.create_prompt import create_prompt, create_delta_prompt
 from ..LLM.model import model
 from ..utils.text_utils import to_str, beautify_smy, display_summary
 from ..utils.meta_utils import base_info
-from ..utils.msg_utils import chunk_msgs
+from ..utils.msg_utils import chunk_msgs, build_alias_map, restore_nicknames
 
 # 全量更新, 将生成的summary和 mem_json存入长期，短期记忆,cache
 def high_refresh(group_id, msgs, hours):
     short = load_memory_short(group_id)
     pool = short.get("mem_json", {}).copy()
 
+    alias_map = build_alias_map(msgs)
+
     # 基础信息
     meta = base_info(msgs)
 
     # 摘要部分
-    prompt = create_prompt(msgs)
+    prompt = create_prompt(msgs, alias_map=alias_map)
     response = to_str(model.invoke(prompt))
     summary = beautify_smy(response)
+    summary = restore_nicknames(summary, alias_map)
 
     # 保存cache
     start_ts = msgs[0]["time"]
@@ -46,9 +49,11 @@ def high_refresh_chunk(group_id, msgs, hours):
     # 每段做小摘要
     chunk_summaries = []
     for idx, c in enumerate(chunks, 1):
-        prompt = create_prompt(c)
+        alias_map = build_alias_map(c)
+        prompt = create_prompt(c, alias_map=alias_map)
         resp = to_str(model.invoke(prompt))
         chunk_summary = beautify_smy(resp)
+        chunk_summary = restore_nicknames(chunk_summary, alias_map)
 
         # 包装为“分段摘要 N”
         chunk_summaries.append(
@@ -96,3 +101,49 @@ def low_refresh(group_id, msgs, short):
     final_summary = display_summary(summary, meta)
     return final_summary
 
+def delta_refresh(group_id, msgs, new_msgs, short, hours):
+    """
+    小增量刷新：
+    基于上次摘要 + 新增原文消息，生成增量摘要并合并到 last_summary 中。
+    """
+    # 获取上次摘要
+    last_summary = ""
+    if short and short.get("mem_json"):
+        last_summary = short["mem_json"].get("last_summary", "") or ""
+
+    # 如果没有历史摘要可用，直接全量刷新
+    if not last_summary:
+        return high_refresh(group_id, msgs, hours)
+
+    alias_map = build_alias_map(new_msgs)
+
+    # 创建增量摘要提示词
+    prompt = create_delta_prompt(last_summary, new_msgs, alias_map=alias_map)
+    if not prompt:
+        return low_refresh(group_id, msgs, short)
+    delta_resp = to_str(model.invoke(prompt))
+    delta_summary = beautify_smy(delta_resp)
+    delta_summary = restore_nicknames(delta_summary, alias_map)
+
+    # 合成新的 last_summary：旧摘要 + 本次新增部分
+    combined_summary = (
+        last_summary
+        + "\n\n[本次新增内容]\n"
+        + delta_summary
+    ).strip()
+
+    # 更新短期记忆
+    pool = short.get("mem_json", {}).copy() if short else {}
+    pool["last_summary"] = combined_summary
+    pool["last_window_hours"] = hours
+    save_memory_short(group_id, pool)
+
+    # 更新 cache：当前窗口内的完整消息
+    start_ts = msgs[0]["time"]
+    end_ts = msgs[-1]["time"]
+    save_chat_cache(group_id, msgs, start_ts, end_ts)
+
+    # 基础信息
+    meta = base_info(msgs)
+    final_summary = display_summary(combined_summary, meta)
+    return final_summary

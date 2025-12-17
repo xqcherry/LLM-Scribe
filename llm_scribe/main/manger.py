@@ -1,7 +1,7 @@
 from ..DB.chat_loader import get_group_msg
 from ..memory.memory_short import load_memory_short
 from ..memory.cache import load_chat_cache, get_group_msg_after
-from ..memory.memory_refresh import high_refresh, low_refresh, high_refresh_chunk
+from ..memory.memory_refresh import high_refresh, low_refresh, high_refresh_chunk, delta_refresh
 from ..utils.filter import filter_msgs
 
 IGNORE_QQ = {3674697536, 2303866129}
@@ -9,7 +9,7 @@ IGNORE_QQ = {3674697536, 2303866129}
 def run(group_id, hours):
     msgs = filter_msgs(get_group_msg(group_id, hours), IGNORE_QQ)
 
-    # 无消息情况
+    # 无消息情况：沿用现有逻辑，直接回退到上次摘要
     if not msgs:
         short = load_memory_short(group_id)
         last_summary = short["mem_json"].get("last_summary") if short else None
@@ -35,13 +35,14 @@ def run(group_id, hours):
         new_msgs = get_group_msg_after(group_id, cache_end_ts)
         new_msgs = filter_msgs(new_msgs, IGNORE_QQ)
 
+        # 三种模式：HIGH / DELTA / LOW
         if not new_msgs:
             mode = "LOW"
         else:
             if len(new_msgs) >= 20:
                 mode = "HIGH"
             else:
-                mode = "LOW"
+                mode = "DELTA"
 
     if mode == "HIGH":
         if len(msgs) > 220:
@@ -49,4 +50,7 @@ def run(group_id, hours):
         else:
             return high_refresh(group_id, msgs, hours)
     else:
+        # LOW 或 DELTA 分支
+        if mode == "DELTA":
+            return delta_refresh(group_id, msgs, new_msgs, short, hours)
         return low_refresh(group_id, msgs, short)

@@ -10,14 +10,13 @@ smy_cmd = on_command("sum", aliases={"summary"}, block=True)
 logger.success("[llm_scribe] 命令 sum/summary 已注册")
 
 HELP_TEXT = (
-    "【LLM-Scribe 摘要帮助】\n"
-    "用法：\n"
-    "  /sum              → 默认近 6 小时摘要\n"
-    "  /sum 12           → 摘要最近 12 小时消息\n"
-    "  /sum day / d      → 摘要最近 24 小时（相当于 /sum 24）\n"
-    "  /sum help / ls    → 显示此帮助\n"
+    "[LLM-Scribe 摘要帮助]\n"
     "\n"
-    "范围：1~24 小时，不支持浮点数\n"
+    "/sum           默认近 6 小时\n"
+    "/sum 12        最近 12 小时\n"
+    "/sum day / d   最近 24 小时\n"
+    "/sum help / ls 查看帮助\n"
+    "(只支持 1~24 小时的整数)\n"
 )
 
 @smy_cmd.handle()
