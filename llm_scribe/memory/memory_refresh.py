@@ -5,23 +5,20 @@ from ..Prompt.create_prompt import create_prompt, create_delta_prompt
 from ..LLM.model import model
 from ..utils.text_utils import to_str, beautify_smy, display_summary
 from ..utils.meta_utils import base_info
-from ..utils.msg_utils import chunk_msgs, build_alias_map, restore_nicknames
+from ..utils.msg_utils import chunk_msgs
 
 # 全量更新, 将生成的summary和 mem_json存入长期，短期记忆,cache
 def high_refresh(group_id, msgs, hours):
     short = load_memory_short(group_id)
     pool = short.get("mem_json", {}).copy()
 
-    alias_map = build_alias_map(msgs)
-
     # 基础信息
     meta = base_info(msgs)
 
     # 摘要部分
-    prompt = create_prompt(msgs, alias_map=alias_map)
+    prompt = create_prompt(msgs)
     response = to_str(model.invoke(prompt))
     summary = beautify_smy(response)
-    summary = restore_nicknames(summary, alias_map)
 
     # 保存cache
     start_ts = msgs[0]["time"]
@@ -49,11 +46,9 @@ def high_refresh_chunk(group_id, msgs, hours):
     # 每段做小摘要
     chunk_summaries = []
     for idx, c in enumerate(chunks, 1):
-        alias_map = build_alias_map(c)
-        prompt = create_prompt(c, alias_map=alias_map)
+        prompt = create_prompt(c)
         resp = to_str(model.invoke(prompt))
         chunk_summary = beautify_smy(resp)
-        chunk_summary = restore_nicknames(chunk_summary, alias_map)
 
         # 包装为“分段摘要 N”
         chunk_summaries.append(
@@ -115,15 +110,12 @@ def delta_refresh(group_id, msgs, new_msgs, short, hours):
     if not last_summary:
         return high_refresh(group_id, msgs, hours)
 
-    alias_map = build_alias_map(new_msgs)
-
     # 创建增量摘要提示词
-    prompt = create_delta_prompt(last_summary, new_msgs, alias_map=alias_map)
+    prompt = create_delta_prompt(last_summary, new_msgs)
     if not prompt:
         return low_refresh(group_id, msgs, short)
     delta_resp = to_str(model.invoke(prompt))
     delta_summary = beautify_smy(delta_resp)
-    delta_summary = restore_nicknames(delta_summary, alias_map)
 
     # 合成新的 last_summary：旧摘要 + 本次新增部分
     combined_summary = (
