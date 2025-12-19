@@ -3,7 +3,7 @@ from ..memory.memory_long import save_memory_long
 from ..memory.cache import save_chat_cache
 from ..Prompt.create_prompt import create_prompt, create_delta_prompt
 from ..LLM.model import model
-from ..utils.text_utils import to_str, beautify_smy, display_summary
+from ..utils.text_utils import to_str, beautify_smy, display_summary, extract_nicknames
 from ..utils.meta_utils import base_info
 from ..utils.msg_utils import chunk_msgs
 
@@ -18,7 +18,8 @@ def high_refresh(group_id, msgs, hours):
     # 摘要部分
     prompt = create_prompt(msgs)
     response = to_str(model.invoke(prompt))
-    summary = beautify_smy(response)
+    nicknames = extract_nicknames(msgs)
+    summary = beautify_smy(response, nicknames)
 
     # 保存cache
     start_ts = msgs[0]["time"]
@@ -48,7 +49,8 @@ def high_refresh_chunk(group_id, msgs, hours):
     for idx, c in enumerate(chunks, 1):
         prompt = create_prompt(c)
         resp = to_str(model.invoke(prompt))
-        chunk_summary = beautify_smy(resp)
+        nicknames = extract_nicknames(c)
+        chunk_summary = beautify_smy(resp, nicknames)
 
         # 包装为“分段摘要 N”
         chunk_summaries.append(
@@ -119,7 +121,8 @@ def delta_refresh(group_id, msgs, new_msgs, short, hours):
     if not prompt:
         return low_refresh(group_id, msgs, short)
     delta_resp = to_str(model.invoke(prompt))
-    delta_summary = beautify_smy(delta_resp)
+    nicknames = extract_nicknames(new_msgs)
+    delta_summary = beautify_smy(delta_resp, nicknames)
 
     # 基础摘要 + 本次新增部分
     combined_summary = (
