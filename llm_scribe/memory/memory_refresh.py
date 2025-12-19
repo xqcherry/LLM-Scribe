@@ -110,16 +110,20 @@ def delta_refresh(group_id, msgs, new_msgs, short, hours):
     if not last_summary:
         return high_refresh(group_id, msgs, hours)
 
-    # 创建增量摘要提示词
-    prompt = create_delta_prompt(last_summary, new_msgs)
+    # 只保留基础摘要部分
+    base_summary = last_summary
+    if "[本次新增内容]" in last_summary:
+        base_summary = last_summary.split("[本次新增内容]")[0].strip()
+
+    prompt = create_delta_prompt(base_summary, new_msgs)
     if not prompt:
         return low_refresh(group_id, msgs, short)
     delta_resp = to_str(model.invoke(prompt))
     delta_summary = beautify_smy(delta_resp)
 
-    # 合成新的 last_summary：旧摘要 + 本次新增部分
+    # 基础摘要 + 本次新增部分
     combined_summary = (
-        last_summary
+        base_summary
         + "\n\n[本次新增内容]\n"
         + delta_summary
     ).strip()
