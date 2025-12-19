@@ -20,7 +20,7 @@ def base_info(msgs):
 
 def info_to_str(meta):
     data = (
-        "基础信息：\n"
+        "** [基础信息] **\n"
         f"- 时段：{meta['time_span']}\n"
         f"- 参与：{meta['user_count']}人，共 {meta['msg_count']} 条消息\n"
         f"- 时长：{meta['duration']}\n"

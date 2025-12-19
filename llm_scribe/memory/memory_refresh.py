@@ -124,7 +124,7 @@ def delta_refresh(group_id, msgs, new_msgs, short, hours):
     # 基础摘要 + 本次新增部分
     combined_summary = (
         base_summary
-        + "\n\n[本次新增内容]\n"
+        + "\n\n** [本次新增内容] **\n"
         + delta_summary
     ).strip()
 

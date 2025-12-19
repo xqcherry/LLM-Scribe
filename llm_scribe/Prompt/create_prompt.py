@@ -12,7 +12,7 @@ def create_prompt(msgs):
 
     sys = SystemMessage(content=(
         BASE_RULES +
-        "\n\n【任务说明】\n"
+        "\n\n任务说明\n"
         "你将看到：基础信息 + 聊天内容\n"
         "在摘要中引用成员时，优先使用聊天内容中的昵称，而不是'有的成员''有人'等模糊说法。\n\n"
         + OUTPUT_RULES
@@ -49,11 +49,11 @@ def create_delta_prompt(last_summary: str, new_msgs):
 
     hum = HumanMessage(
         content=(
-            "下面是【上次摘要】\n"
+            "下面是[上次摘要]\n"
             "请只针对本次新增部分，生成一段'本次新增内容'的详细摘要，用于附加在上次摘要之后。\n\n"
-            "【上次摘要】:\n"
+            "[上次摘要]:\n"
             f"{last_summary}\n\n"
-            "【本次新增聊天内容】:\n"
+            "[本次新增聊天内容]:\n"
             f"{new_chat_text}\n"
         )
     )
