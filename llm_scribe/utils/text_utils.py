@@ -42,3 +42,25 @@ def beautify_smy(text, nicknames=None):
 def display_summary(summary, meta):
     info = info_to_str(meta)
     return info + "\n" + summary
+
+
+def extract_parts(summary: str):
+
+    if "=== 分段摘要" not in summary:
+        return [summary]
+
+    raw = summary.split("=== 分段摘要")
+    parts = []
+
+    for idx, segment in enumerate(raw):
+        seg = segment.strip()
+        if not seg:
+            continue
+
+        # 第一段（基础信息 + 内容）不加标签
+        if idx == 0:
+            parts.append(seg)
+        else:
+            parts.append("=== 分段摘要" + seg)
+
+    return parts

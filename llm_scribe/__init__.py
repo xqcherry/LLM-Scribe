@@ -68,40 +68,13 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
         #     user_id=str(event.user_id)
         # )
 
-        # 新逻辑：先分段，再对每一段分别使用 cvmd 接口生成多张图片发送
-        parts = extract_parts(summary_text)
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-            await send_summary_as_cvmd(bot, event, part)
-            await asyncio.sleep(0.5)
+        # 新逻辑：整段摘要直接使用 cvmd 接口生成一张图片发送
+        await send_summary_as_cvmd(bot, event, summary_text)
         return
 
     except Exception as e:
         logger.error(f"[llm_scribe] 群 {group_id} 摘要生成失败: {e}")
         await smy_cmd.send(f"摘要生成失败: {e}")
-
-def extract_parts(summary: str):
-    # 若不存在分段标题，直接整体输出
-    if "=== 分段摘要" not in summary:
-        return [summary]
-
-    raw = summary.split("=== 分段摘要")
-    parts = []
-
-    for idx, segment in enumerate(raw):
-        seg = segment.strip()
-        if not seg:
-            continue
-
-        # 第一段（基础信息 + 内容）不加标签
-        if idx == 0:
-            parts.append(seg)
-        else:
-            parts.append("=== 分段摘要" + seg)
-
-    return parts
 
 async def send_parts(bot, event, parts):
     for p in parts:
@@ -133,3 +106,32 @@ async def send_summary_as_cvmd(bot: Bot, event: GroupMessageEvent, summary_text:
     except Exception as e:
         logger.error(f"[llm_scribe] 调用 cvmd 接口生成图片失败: {e}")
         await smy_cmd.send(f"生成图片失败：{e}")
+
+
+# ==================== 本地测试代码 ====================
+
+# if __name__ == "__main__":
+#     import sys
+#     import os
+#
+#     # 添加父目录到路径，以便导入模块
+#     current_dir = os.path.dirname(os.path.abspath(__file__))
+#     parent_dir = os.path.dirname(current_dir)
+#     if parent_dir not in sys.path:
+#         sys.path.insert(0, parent_dir)
+#
+#     from llm_scribe.main.manger import run
+#
+#     group_id = 1017750994
+#     hours = 11
+#
+#     output_file = sys.argv[1] if len(sys.argv) >= 2 else "summary_output.txt"
+#
+#     summary = run(group_id, hours)
+#
+#     # 输出到控制台
+#     print(summary)
+#
+#     # 保存到文件
+#     with open(output_file, 'w', encoding='utf-8') as f:
+#         f.write(summary)

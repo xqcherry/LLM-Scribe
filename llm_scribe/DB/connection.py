@@ -17,3 +17,17 @@ def _load_db_config():
 
 def get_connection():
     return pymysql.connect(**_load_db_config())
+
+# import pymysql
+#
+#
+# def get_connection():
+#     # 硬编码数据库配置
+#     return pymysql.connect(
+#         host="100.103.229.56",
+#         port=3307,
+#         user="gxuicpc",
+#         password="gxuicpc",
+#         database="diting_qq_bot",
+#         charset="utf8mb4"
+#     )
