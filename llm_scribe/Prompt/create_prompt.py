@@ -2,7 +2,7 @@ from langchain.messages import SystemMessage, HumanMessage
 from ..Prompt.bascial_prompt import BASE_RULES, OUTPUT_RULES
 
 
-def create_prompt(msgs, alias_map=None):
+def create_prompt(msgs):
     # 拼接聊天内容
     chat_text = "\n".join(
         f"{m.get('sender_nickname', m.get('user_id', ''))}: {m.get('raw_message', '')}"
@@ -27,7 +27,7 @@ def create_prompt(msgs, alias_map=None):
     return [sys, hum]
 
 
-def create_delta_prompt(last_summary: str, new_msgs, alias_map=None):
+def create_delta_prompt(last_summary: str, new_msgs):
     """
     基于"上次摘要 + 新增聊天内容"的增量摘要提示词。
     只要求模型总结新增部分带来的变化，不重复旧摘要。
