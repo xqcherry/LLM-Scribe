@@ -21,9 +21,9 @@ def beautify_smy(text, nicknames=None):
     # 去 markdown 格式
     text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"[*_`]+", "", text)
-    # 标题格式
-    text = re.sub(r"\s*(整体摘要)\s*", r"\n\n** [\1] **\n", text)
-    text = re.sub(r"\s*(话题总结)\s*", r"\n\n** [\1] **\n", text)
+    # 标题格式 -> [整体摘要] / [话题总结]
+    text = re.sub(r"\s*(整体摘要)\s*", r"\n\n[\1]\n", text)
+    text = re.sub(r"\s*(话题总结)\s*", r"\n\n[\1]\n", text)
     
     # 标记昵称
     if nicknames:
