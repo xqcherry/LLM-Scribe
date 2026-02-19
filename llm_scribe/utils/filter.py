@@ -24,3 +24,12 @@ def CQ_filter(text: str):
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
+
+# 过滤指定qq信息
+def filter_msgs(msgs, ignore_ids):
+    if not msgs:
+        return []
+
+    ignore_ids = set(ignore_ids)
+    return [m for m in msgs if m.get("user_id") not in ignore_ids]
+
