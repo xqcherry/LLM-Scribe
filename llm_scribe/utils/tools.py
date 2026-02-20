@@ -1,11 +1,8 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from llm_scribe.Prompt.prompt3 import EXTRACT
-from llm_scribe.llm.model import get_llm
-from llm_scribe.memory.memory_short import STRUCTURE
 import re, json
 
-model = get_llm()
+# 注意：此文件中的 build_mem_json 函数已废弃，请使用 core/chains/extraction_chain.py
 
 def to_str(text):
     if text is None:
@@ -72,35 +69,14 @@ def display_summary(summary, meta):
     info = info_to_str(meta)
     return info + "\n" + summary
 
-# 构建mem_json
+# 构建mem_json（已废弃，请使用 core/chains/extraction_chain.py）
 def build_mem_json(msgs):
-
-    data = STRUCTURE.copy()
-    if not msgs:
-        return data;
-
-    lines = []
-    for m in msgs:
-        t = m.get("time")  # 时间戳
-        u = m.get("sender_nickname", m.get("user_id"))  # 优先昵称，其次用户ID
-        txt = m.get("raw_message")  # 消息内容
-        lines.append(f"[{t}] {u}: {txt}")
-
-    chat_text = "\n".join(lines)
-
-    prompt = EXTRACT.replace("{CHAT_MESSAGES}", chat_text)
-    response = to_str(model.invoke(prompt))
-
-    try:
-        data = json.loads(response)
-    except:
-        data = {
-            "concepts": [],
-            "events": [],
-            "quotes": [],
-        }
-
-    return data
+    """已废弃：请使用 core.chains.ExtractionChain"""
+    return {
+        "concepts": [],
+        "events": [],
+        "quotes": [],
+    }
 
 def chunk_msgs(msgs, chunk_size=250, overlap=50):
 

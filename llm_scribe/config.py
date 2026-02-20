@@ -32,6 +32,9 @@ class Config(BaseModel):
     # LangSmith 配置
     langsmith_api_key: Optional[str] = Field(default=None)
     langsmith_project: Optional[str] = Field(default="llm-scribe")
+    
+    # 忽略的 QQ 号列表
+    ignore_qq: set = Field(default_factory=lambda: {3674697536, 2303866129})
 
 
 @lru_cache()

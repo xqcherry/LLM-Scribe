@@ -68,6 +68,8 @@ class LLMSemanticCache:
 
     def get(
         self,
+        group_id: int,
+        hours: int,
         messages: List[Dict]
     ) -> Optional[Dict]:
         """获取缓存"""
@@ -77,16 +79,19 @@ class LLMSemanticCache:
             cached_result = get(query, cache_obj=self.cache)
             if cached_result:
                 result = json.loads(cached_result)
-                return {
-                    "summary": result.get("summary"),
-                    "metadata": result.get("metadata", {}),
-                    "cached": True,
-                    "similarity_score": result.get("similarity_score", 1.0)
-                }
+                # 检查群组和时间窗口是否匹配
+                if result.get("group_id") == group_id and result.get("hours") == hours:
+                    return {
+                        "summary": result.get("summary"),
+                        "metadata": result.get("metadata", {}),
+                        "cached": True,
+                        "similarity_score": result.get("similarity_score", 1.0)
+                    }
         except (ValueError, json.JSONDecodeError) as e:
             print(f"Cache get error: {e}")
         except Exception as e:
             print(f"Unexpected cache error: {e}")
+        return None
 
     def put(
         self,

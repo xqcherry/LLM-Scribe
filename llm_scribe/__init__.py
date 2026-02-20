@@ -26,8 +26,7 @@ HELP_TEXT = (
 
 @smy_cmd.handle()
 async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
-
-    from .main.manger import run
+    from .core.graph import SummaryGraph
 
     group_id = event.group_id
     text = args.extract_plain_text().strip()
@@ -51,24 +50,15 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
             return
 
     try:
-        loop = asyncio.get_running_loop()
-        summary_text = await loop.run_in_executor(None, run, group_id, hours)
+        # 使用新的 SummaryGraph 工作流
+        graph = SummaryGraph()
+        summary_text = await graph.invoke(group_id, hours)
 
         if not summary_text or not isinstance(summary_text, str):
             await smy_cmd.send("未生成有效摘要内容。")
             return
 
-        # 旧逻辑：分段 + 合并转发长文本
-        # parts = extract_parts(summary_text)
-        # await send_forward_msg.by_onebot_api(
-        #     bot=bot,
-        #     event=event,
-        #     messges=parts,
-        #     group_id=str(event.group_id),
-        #     user_id=str(event.user_id)
-        # )
-
-        # 新逻辑：整段摘要直接使用 cvmd 接口生成一张图片发送
+        # 使用 cvmd 接口生成图片并发送
         await send_summary_as_cvmd(bot, event, summary_text)
         return
 
