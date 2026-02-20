@@ -2,7 +2,7 @@ from ..memory.memory_short import load_memory_short, save_memory_short
 from ..memory.memory_long import save_memory_long
 from ..memory.cache import save_chat_cache
 from ..Prompt.create_prompt import create_prompt, create_delta_prompt
-from ..LLM.model import model
+from ..llm.model import model
 from ..utils.text_utils import to_str, beautify_smy, display_summary, extract_nicknames
 from ..utils.meta_utils import base_info
 from ..utils.msg_utils import chunk_msgs

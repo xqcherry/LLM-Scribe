@@ -2,7 +2,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
-class MemoryModel(BaseModel):
+class MemoryState(BaseModel):
     """记忆状态"""
     last_summary: str = Field(default="")
     last_window_hours: Optional[int] = Field(default=None)

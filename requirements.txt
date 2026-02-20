@@ -1,10 +1,10 @@
-# Core LLM Framework
+# Core llm Framework
 langchain>=0.3.0
 langchain-community>=0.3.0
 langgraph>=0.2.0
 langsmith>=0.1.0
 
-# LLM Cache
+# llm Cache
 gptcache>=0.1.44
 onnxruntime>=1.16.0
 

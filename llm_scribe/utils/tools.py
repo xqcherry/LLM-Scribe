@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from llm_scribe.Prompt.prompt3 import EXTRACT
-from llm_scribe.LLM.model import get_llm
+from llm_scribe.llm.model import get_llm
 from llm_scribe.memory.memory_short import STRUCTURE
 import re, json
 

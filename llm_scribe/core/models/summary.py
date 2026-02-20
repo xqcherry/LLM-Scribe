@@ -9,7 +9,7 @@ class TopicSummary(BaseModel):
     participants: List[str] = Field(description="参与者列表")
     key_points: List[str] = Field(description="关键要点")
 
-class summaryOutput(BaseModel):
+class SummaryOutput(BaseModel):
     """结构化摘要输出"""
     overall_summary: str = Field(description="整体摘要")
     topics: List[TopicSummary] = Field(description="话题列表")

@@ -15,7 +15,7 @@ smy_cmd = on_command("sum", aliases={"summary"}, block=True)
 logger.success("[llm_scribe] 命令 sum/summary 已注册")
 
 HELP_TEXT = (
-    "[LLM-Scribe 摘要帮助]\n"
+    "[llm-Scribe 摘要帮助]\n"
     "\n"
     "/sum           默认近 6 小时\n"
     "/sum 12        最近 12 小时\n"

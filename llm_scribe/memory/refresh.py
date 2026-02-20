@@ -2,7 +2,7 @@ from llm_scribe.memory.memory_short import load_memory_short, save_memory_short
 from llm_scribe.memory.memory_long import save_memory_long
 from llm_scribe.memory.cache import save_chat_cache
 from llm_scribe.Prompt.prompt1 import create_prompt
-from llm_scribe.LLM.model import get_llm
+from llm_scribe.llm.model import get_llm
 from llm_scribe.utils.tools import display_summary, to_str, beautify_smy, base_info, chunk_msgs
 from datetime import datetime, timezone
 
