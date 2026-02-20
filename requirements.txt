@@ -1,14 +1,32 @@
-# Core Framework
-langchain
-langchain-community
-langchain-openai
-langchain-anthropic
-langchain-google-genai
-pydantic-settings
-pymysql
-jieba
-tiktoken
+# Core LLM Framework
+langchain>=0.3.0
+langchain-community>=0.3.0
+langgraph>=0.2.0
+langsmith>=0.1.0
 
-# Bot
-nonebot2[fastapi]
-nonebot-adapter-onebot
+# LLM Cache
+gptcache>=0.1.44
+onnxruntime>=1.16.0
+
+# Vector Database & Embeddings
+chromadb>=0.4.0
+sentence-transformers>=2.3.0
+
+# Data Processing
+pydantic>=2.0
+pydantic-settings>=2.0
+tiktoken>=0.7.0
+jieba>=0.42.1
+
+# Database & Cache
+pymysql>=1.1.0
+aiomysql>=0.2.0
+redis>=5.0.0
+
+# Bot Framework
+nonebot2[fastapi]>=2.2.0
+nonebot-adapter-onebot>=2.4.3
+
+# Utilities
+python-dotenv>=1.0.0
+numpy>=1.24.0
