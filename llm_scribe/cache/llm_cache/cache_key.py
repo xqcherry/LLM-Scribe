@@ -1,4 +1,3 @@
-"""缓存键生成策略"""
 import hashlib
 import json
 from typing import List, Dict
@@ -10,7 +9,6 @@ class CacheKeyGenerator:
     @staticmethod
     def generate_message_hash(messages: List[Dict]) -> str:
         """生成消息内容的哈希"""
-        # 提取关键信息
         key_info = {
             "count": len(messages),
             "participants": sorted(set(

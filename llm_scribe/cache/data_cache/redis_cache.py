@@ -21,7 +21,7 @@ class RedisDataCache:
         """获取缓存"""
         try:
             data = self.redis.get(key)
-            if data:
+            if data is not None:
                 return json.loads(data)
         except Exception as e:
             print(f"Redis get error: {e}")

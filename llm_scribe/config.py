@@ -24,9 +24,8 @@ class Config(BaseModel):
 
     # ChromaDB 配置
     chroma_persist_dir: str = Field(default="./chroma_db")
-
-    # GPTCache 配置
-    gptcache_dir: str = Field(default="./gptcache_db")
+    
+    # LLM Cache 配置
     cache_similarity_threshold: float = Field(default=0.85)
 
     # LangSmith 配置

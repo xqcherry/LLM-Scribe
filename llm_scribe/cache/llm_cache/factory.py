@@ -1,23 +1,9 @@
-from typing import Protocol, Optional, List, Dict
-from .gptcache import LLMSemanticCache
 from .semantic_cache import RedisSemanticCache
 
 
-class LLMCacheInterface(Protocol):
-    """缓存接口协议"""
-    def get(self, group_id: int, hours: int, messages: List[Dict]) -> Optional[Dict]:
-        ...
-    def put(self, group_id: int, hours: int, messages: List[Dict], summary: str, metadata: Dict = None):
-        ...
-
-
 class LLMCacheFactory:
-    """缓存工厂"""
+    """LLM 缓存工厂（使用 Redis 语义缓存）"""
     @staticmethod
-    def create_cache(cache_type: str = "gptcache", **kwargs):
-        if cache_type == "gptcache":
-            return LLMSemanticCache(**kwargs)
-        elif cache_type == "redis":
-            return RedisSemanticCache(**kwargs)
-        else:
-            raise ValueError(f"Unknown cache type: {cache_type}")
+    def create_cache(**kwargs):
+        """创建 Redis 语义缓存实例"""
+        return RedisSemanticCache(**kwargs)

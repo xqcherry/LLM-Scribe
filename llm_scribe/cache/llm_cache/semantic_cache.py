@@ -1,12 +1,10 @@
 from typing import Optional, List, Dict
-import redis
-import json
-import hashlib
-import time
+import redis, json, time
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from ...config import get_config
+from .cache_key import CacheKeyGenerator
 
 
 class RedisSemanticCache:
@@ -37,6 +35,7 @@ class RedisSemanticCache:
         
         self.similarity_threshold = similarity_threshold or config.cache_similarity_threshold
         self.namespace = namespace
+        self.cache_key_gen = CacheKeyGenerator()
         
         # 使用本地 Embedding 模型
         if embedding_model is None:
@@ -56,30 +55,7 @@ class RedisSemanticCache:
     
     def _messages_to_query(self, messages: List[Dict]) -> str:
         """将消息转换为查询字符串"""
-        participants = set(
-            m.get("sender_nickname", "")
-            for m in messages
-            if m.get("sender_nickname")
-        )
-        
-        if len(messages) <= 10:
-            message_text = "\n".join(
-                m.get("raw_message", "")[:100]
-                for m in messages
-            )
-        else:
-            head = messages[:3]
-            tail = messages[-3:]
-            middle_idx = len(messages) // 2
-            middle = messages[middle_idx:middle_idx+3]
-            
-            message_text = "\n".join(
-                m.get("raw_message", "")[:100]
-                for m in head + middle + tail
-            )
-        
-        query = f"群组消息摘要：{len(participants)}人，{len(messages)}条消息\n{message_text}"
-        return query
+        return self.cache_key_gen.generate_semantic_query(messages)
     
     def _get_all_cached_queries(self, group_id: int) -> List[tuple]:
         """获取群组的所有缓存查询"""
@@ -102,7 +78,6 @@ class RedisSemanticCache:
     def get(
         self,
         group_id: int,
-        hours: int,
         messages: List[Dict]
     ) -> Optional[Dict]:
         """语义检索缓存"""
@@ -155,7 +130,7 @@ class RedisSemanticCache:
         """存入缓存"""
         query_text = self._messages_to_query(messages)
         query_embedding = self._get_embedding(query_text)
-        query_hash = hashlib.md5(query_text.encode()).hexdigest()
+        query_hash = self.cache_key_gen.generate_message_hash(messages)
         
         cache_data = {
             "query_embedding": json.dumps(query_embedding.tolist()),
