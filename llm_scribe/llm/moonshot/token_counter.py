@@ -12,7 +12,7 @@ class TokenCounter:
         """计算文本的 token 数量"""
         return len(self.encoding.encode(text))
 
-    def count_messages_tokens(self, messages: List[str]) -> int:
+    def count_messages_tokens(self, messages: List[dict]) -> int:
         """计算消息列表的 token 数量"""
         text = "\n".join(
             f"{m.get('sender_nickname', '')}: {m.get('raw_message', '')}"

@@ -1,4 +1,3 @@
-"""提示词版本管理器"""
 from typing import Dict, Optional
 import json
 from pathlib import Path

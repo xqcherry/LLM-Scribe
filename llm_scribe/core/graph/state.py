@@ -1,5 +1,4 @@
-"""工作流状态定义"""
-from typing import TypedDict, List, Dict, Literal, Optional
+from typing import TypedDict, List, Dict, Literal
 
 
 class SummaryState(TypedDict):

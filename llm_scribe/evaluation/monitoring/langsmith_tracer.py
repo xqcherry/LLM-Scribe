@@ -1,4 +1,3 @@
-"""LangSmith 监控追踪"""
 from typing import Optional, Dict, List
 from langsmith import traceable, Client
 from langchain.callbacks import LangChainTracer

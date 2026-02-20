@@ -1,7 +1,5 @@
-"""流式处理"""
 from typing import AsyncIterator
 from langchain_core.callbacks import AsyncCallbackHandler
-from langchain_core.messages import BaseMessage
 
 
 class StreamingHandler(AsyncCallbackHandler):

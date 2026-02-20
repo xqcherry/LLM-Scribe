@@ -1,12 +1,11 @@
-"""质量评估指标"""
 from typing import List, Dict
 
 
 class QualityMetrics:
     """摘要质量评估指标"""
-    
+
+    @staticmethod
     def evaluate_completeness(
-        self,
         summary: str,
         original_messages: List[Dict]
     ) -> float:
@@ -27,9 +26,9 @@ class QualityMetrics:
         completeness = mentioned / len(participants) if participants else 0.0
         
         return min(completeness, 1.0)
-    
+
+    @staticmethod
     def evaluate_length(
-        self,
         summary: str,
         min_length: int = 50,
         max_length: int = 2000

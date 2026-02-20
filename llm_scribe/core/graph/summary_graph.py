@@ -1,6 +1,6 @@
-"""摘要生成工作流"""
-from typing import Literal
+from typing import cast, Any
 from langgraph.graph import StateGraph, END
+from langgraph.graph.state import CompiledStateGraph
 from .state import SummaryState
 from ...llm.moonshot.model_factory import MoonshotFactory
 from ...cache.llm_cache import LLMCacheFactory
@@ -28,20 +28,20 @@ class SummaryGraph:
         self.message_repo = MessageRepository()
         self.graph = self._build_graph()
     
-    def _build_graph(self) -> StateGraph:
+    def _build_graph(self) -> CompiledStateGraph:
         """构建工作流"""
-        workflow = StateGraph(SummaryState)
+        workflow = StateGraph(cast(Any, SummaryState))
         
         # 添加节点
-        workflow.add_node("load_messages", self.load_messages)
-        workflow.add_node("filter_messages", self.filter_messages)
-        workflow.add_node("check_cache", self.check_cache)
-        workflow.add_node("count_tokens", self.count_tokens)
-        workflow.add_node("select_model", self.select_model)
-        workflow.add_node("retrieve_memory", self.retrieve_memory)
-        workflow.add_node("generate_summary", self.generate_summary)
-        workflow.add_node("save_cache", self.save_cache)
-        workflow.add_node("save_memory", self.save_memory)
+        workflow.add_node("load_messages", cast(Any, self.load_messages))
+        workflow.add_node("filter_messages", cast(Any, self.filter_messages))
+        workflow.add_node("check_cache", cast(Any, self.check_cache))
+        workflow.add_node("count_tokens", cast(Any, self.count_tokens))
+        workflow.add_node("select_model", cast(Any, self.select_model))
+        workflow.add_node("retrieve_memory", cast(Any, self.retrieve_memory))
+        workflow.add_node("generate_summary", cast(Any, self.generate_summary))
+        workflow.add_node("save_cache", cast(Any, self.save_cache))
+        workflow.add_node("save_memory", cast(Any, self.save_memory))
         
         # 定义边
         workflow.set_entry_point("load_messages")
@@ -71,8 +71,9 @@ class SummaryGraph:
             state["hours"]
         )
         return state
-    
-    def filter_messages(self, state: SummaryState) -> SummaryState:
+
+    @staticmethod
+    def filter_messages(state: SummaryState) -> SummaryState:
         """过滤消息"""
         config = get_config()
         state["filtered_messages"] = filter_msgs(
@@ -98,8 +99,9 @@ class SummaryGraph:
             state["cache_hit"] = False
         
         return state
-    
-    def route_cache(self, state: SummaryState) -> str:
+
+    @staticmethod
+    def route_cache(state: SummaryState) -> str:
         """缓存路由"""
         return "hit" if state.get("cache_hit") else "miss"
     
@@ -143,8 +145,9 @@ class SummaryGraph:
             "token_count": state["token_count"]
         }
         return state
-    
-    def _format_summary(self, summary_output) -> str:
+
+    @staticmethod
+    def _format_summary(summary_output) -> str:
         """格式化摘要输出"""
         lines = [f"【整体摘要】\n{summary_output.overall_summary}\n"]
         
@@ -205,5 +208,5 @@ class SummaryGraph:
             "cache_similarity": 0.0
         }
         
-        result = await self.graph.ainvoke(initial_state)
+        result = await self.graph.ainvoke(cast(Any, initial_state))
         return result["summary"]
