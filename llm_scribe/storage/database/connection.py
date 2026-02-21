@@ -1,4 +1,3 @@
-"""数据库连接"""
 import pymysql
 from ...config import get_config
 

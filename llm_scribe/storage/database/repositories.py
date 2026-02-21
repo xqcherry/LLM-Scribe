@@ -1,4 +1,3 @@
-"""数据访问层"""
 import pymysql
 from typing import List, Dict
 from .connection import get_connection
@@ -6,8 +5,9 @@ from .connection import get_connection
 
 class MessageRepository:
     """消息数据访问层"""
-    
-    def get_group_messages(self, group_id: int, hours: int = 24) -> List[Dict]:
+
+    @staticmethod
+    def get_group_messages(group_id: int, hours: int = 24) -> List[Dict]:
         """获取群组消息"""
         conn = get_connection()
         cur = conn.cursor(pymysql.cursors.DictCursor)
@@ -18,7 +18,6 @@ class MessageRepository:
             WHERE message_type='group'
               AND group_id=%s
               AND time > UNIX_TIMESTAMP(NOW() - INTERVAL %s HOUR)
-            ORDER BY time ASC
         """
         cur.execute(sql, (group_id, hours))
         rows = cur.fetchall()
@@ -36,8 +35,9 @@ class MessageRepository:
             })
         
         return cleaned
-    
-    def get_group_messages_after(self, group_id: int, timestamp: int) -> List[Dict]:
+
+    @staticmethod
+    def get_group_messages_after(group_id: int, timestamp: int) -> List[Dict]:
         """获取指定时间之后的消息"""
         conn = get_connection()
         cur = conn.cursor(pymysql.cursors.DictCursor)
@@ -48,7 +48,6 @@ class MessageRepository:
             WHERE message_type='group'
               AND group_id=%s
               AND time > %s
-            ORDER BY time ASC
         """
         cur.execute(sql, (group_id, timestamp))
         rows = cur.fetchall()

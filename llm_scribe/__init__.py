@@ -4,7 +4,6 @@ from nonebot import on_command
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, Bot, MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
-from .utils.send_forward_msg import send_forward_msg
 
 # cvmd 接口配置（和剪切板插件一致即可）
 CVMD_URL = "http://8.163.30.212:1145/api/generate-markdown-image"

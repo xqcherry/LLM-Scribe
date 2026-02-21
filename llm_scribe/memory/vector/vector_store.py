@@ -3,7 +3,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 from typing import List, Dict
-from .base import BaseVectorStore
+from llm_scribe.memory.vector.vector_store_base import BaseVectorStore
 from ...config import get_config
 
 

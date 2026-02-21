@@ -1,4 +1,3 @@
-"""记忆压缩实现"""
 from typing import List
 from ...core.chains.compression_chain import CompressionChain
 

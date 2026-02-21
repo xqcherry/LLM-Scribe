@@ -1,14 +1,15 @@
+import time
 from typing import cast, Any
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 from .state import SummaryState
 from ...llm.moonshot.model_factory import MoonshotFactory
 from ...cache.llm_cache import LLMCacheFactory
-from ...memory.vector_store.chroma_store import VectorMemoryStore
-from ...retrieval.rag.retriever import RAGRetriever
+from ...memory import MemoryManager
+from ...retrieval import RAGRetriever, HybridSearch
 from ...core.chains.summary_chain import SummaryChain
 from ...storage.database import MessageRepository
-from ...utils.filter import filter_msgs
+from ...pipeline.preprocessing import filter_msgs
 from ...config import get_config
 
 
@@ -19,12 +20,31 @@ class SummaryGraph:
         self,
         model_factory: MoonshotFactory = None,
         llm_cache = None,
-        vector_store = None
+        memory_manager: MemoryManager = None,
+        use_hybrid_search: bool = None
     ):
         self.model_factory = model_factory or MoonshotFactory()
         self.llm_cache = llm_cache or LLMCacheFactory.create_cache()
-        self.vector_store = vector_store or VectorMemoryStore()
-        self.retriever = RAGRetriever(self.vector_store, self.model_factory)
+        self.memory_manager = memory_manager or MemoryManager()
+        
+        # 获取配置
+        config = get_config()
+        if use_hybrid_search is None:
+            use_hybrid_search = getattr(config, 'retrieval_use_hybrid_search', True)
+        
+        # 初始化检索器
+        rag_retriever = RAGRetriever(
+            self.memory_manager.vector_store_instance,
+            self.model_factory,
+            use_compression=getattr(config, 'retrieval_use_compression', True)
+        )
+        
+        # 使用混合检索（推荐）或直接使用 RAGRetriever
+        if use_hybrid_search:
+            self.retriever = HybridSearch(rag_retriever)
+        else:
+            self.retriever = rag_retriever
+        
         self.message_repo = MessageRepository()
         self.graph = self._build_graph()
     
@@ -120,10 +140,30 @@ class SummaryGraph:
         return state
     
     def retrieve_memory(self, state: SummaryState) -> SummaryState:
-        """检索记忆"""
+        """检索记忆（使用改进的 RAG 检索）"""
         query = f"群组 {state['group_id']} 最近 {state['hours']} 小时的聊天摘要"
-        docs = self.retriever.retrieve_relevant_context(query, state["group_id"])
-        state["memory_context"] = "\n".join(doc.page_content for doc in docs)
+        
+        # 使用改进的检索器
+        if isinstance(self.retriever, HybridSearch):
+            # 使用混合检索（向量检索 + 重排序）
+            result = self.retriever.search(
+                query=query,
+                group_id=state["group_id"],
+                top_k=5,
+                use_rerank=True
+            )
+            # 将 Document 列表转换为文本
+            contexts = [doc.page_content for doc in result]
+        else:
+            # 使用 RAGRetriever
+            result = self.retriever.retrieve_relevant_context(
+                query=query,
+                group_id=state["group_id"],
+                top_k=5
+            )
+            contexts = [doc.page_content for doc in result]
+        
+        state["memory_context"] = "\n\n".join(contexts) if contexts else ""
         return state
     
     async def generate_summary(self, state: SummaryState) -> SummaryState:
@@ -140,10 +180,25 @@ class SummaryGraph:
         
         # 转换为字符串格式
         state["summary"] = self._format_summary(result)
+        
+        # 从摘要结果中提取概念和事件
+        concepts = result.participants if hasattr(result, 'participants') else []
+        events = []
+        if hasattr(result, 'topics') and result.topics:
+            for topic in result.topics:
+                events.append({
+                    "event": topic.topic,
+                    "participants": topic.participants if hasattr(topic, 'participants') else [],
+                    "timestamp": int(time.time())
+                })
+        
         state["metadata"] = {
             "model": state["selected_model"],
-            "token_count": state["token_count"]
+            "token_count": state["token_count"],
+            "concepts": concepts,
+            "events": events
         }
+        state["summary_output"] = result  # 保存原始结果以便后续使用
         return state
 
     @staticmethod
@@ -178,13 +233,19 @@ class SummaryGraph:
         return state
     
     def save_memory(self, state: SummaryState) -> SummaryState:
-        """保存记忆"""
-        import time
-        self.vector_store.add_summary(
-            state["group_id"],
-            state["summary"],
-            {
-                "timestamp": int(time.time()),
+        """保存记忆到所有子系统（事件记忆、语义记忆、向量存储）"""
+        # 从摘要中提取概念和事件（简化实现，实际可以从 SummaryOutput 中提取）
+        concepts = state.get("metadata", {}).get("concepts", [])
+        events = state.get("metadata", {}).get("events", [])
+        
+        # 使用 MemoryManager 的统一接口保存记忆
+        self.memory_manager.add_memory(
+            group_id=state["group_id"],
+            messages=state["filtered_messages"],
+            summary=state["summary"],
+            concepts=concepts,
+            events=events,
+            metadata={
                 "hours": state["hours"],
                 **state.get("metadata", {})
             }
