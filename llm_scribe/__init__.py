@@ -1,13 +1,8 @@
 import asyncio
-import aiohttp
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, Bot, MessageSegment
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, Bot
 from nonebot.log import logger
 from nonebot.params import CommandArg
-
-# cvmd 接口配置（和剪切板插件一致即可）
-CVMD_URL = "http://8.163.30.212:1145/api/generate-markdown-image"
-CVMD_TIMEOUT = 30
 
 smy_cmd = on_command("sum", aliases={"summary"}, block=True)
 
@@ -57,8 +52,8 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
             await smy_cmd.send("未生成有效摘要内容。")
             return
 
-        # 使用 cvmd 接口生成图片并发送
-        await send_summary_as_cvmd(bot, event, summary_text)
+        # 直接以文本形式发送摘要（按段落拆分，避免单条过长）
+        await send_parts(bot, event, summary_text.split("\n\n"))
         return
 
     except Exception as e:
@@ -72,29 +67,6 @@ async def send_parts(bot, event, parts):
             continue
         await bot.send(event, p)
         await asyncio.sleep(1)
-
-
-async def send_summary_as_cvmd(bot: Bot, event: GroupMessageEvent, summary_text: str):
-    """
-    调用 cvmd 接口把摘要渲染成图片并发送
-    """
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                CVMD_URL,
-                json={"content": summary_text},
-                timeout=CVMD_TIMEOUT,
-            ) as res:
-                if res.status != 200:
-                    await smy_cmd.send(f"cvmd 生成图片失败，HTTP {res.status}")
-                    return
-
-                img_bytes = await res.read()
-
-        await bot.send(event, MessageSegment.image(img_bytes))
-    except Exception as e:
-        logger.error(f"[llm_scribe] 调用 cvmd 接口生成图片失败: {e}")
-        await smy_cmd.send(f"生成图片失败：{e}")
 
 
 # ==================== 本地测试代码 ====================

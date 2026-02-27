@@ -17,8 +17,9 @@ class MoonshotFactory:
         self.token_counter = TokenCounter()
         self.api_key = self.config.moonshot_api_key
 
-        if not self.api_key :
-            raise ValueError("Moonshot API key is required")
+        if not self.api_key:
+            raise ValueError("Moonshot API key is required. "
+                             "请在环境变量或 NoneBot 插件配置中设置 moonshot_api_key/llm_scribe_moonshot_api_key")
 
     def select_model(
         self,

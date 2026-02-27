@@ -6,15 +6,18 @@ from typing import Optional
 
 class Config(BaseModel):
     # 数据库配置
-    db_host: str = Field(default="localhost")
-    db_port: int = Field(default=3306)
-    db_user: str = Field(default="root")
-    db_password: str = Field(default="123456")
-    db_name: str = Field(default="llm_scribe")
-    db_charset: str = Field(default="utf8mb4")
+    db_host: str = Field(default="localhost", description="MySQL 主机地址")
+    db_port: int = Field(default=3306, description="MySQL 端口")
+    db_user: str = Field(default="", description="MySQL 用户名")
+    db_password: str = Field(default="", description="MySQL 密码")
+    db_name: str = Field(default="", description="数据库名")
+    db_charset: str = Field(default="utf8mb4", description="数据库字符集")
 
     # Moonshot API
-    moonshot_api_key: str = Field(default="sk-oYmzIcdwWOG8YMLkpcYTtj3sVsmkmQkCnBC1mNBTUqjXJI5k")
+    moonshot_api_key: str = Field(
+        default="",
+        description="Moonshot API Key，必须通过环境变量配置"
+    )
 
     # Redis 配置（用于缓存）
     redis_host: str = Field(default="localhost")
@@ -38,7 +41,10 @@ class Config(BaseModel):
     langsmith_project: Optional[str] = Field(default="llm-scribe")
     
     # 忽略的 QQ 号列表
-    ignore_qq: set = Field(default_factory=lambda: {3674697536, 2303866129})
+    ignore_qq: set = Field(
+        default_factory=set,
+        description="需要忽略的 QQ 号列表，默认为空，请在配置中自行填写"
+    )
 
 
 @lru_cache()

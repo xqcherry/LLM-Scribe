@@ -9,7 +9,7 @@ from ...memory import MemoryManager
 from ...retrieval import RAGRetriever, HybridSearch
 from ...core.chains.summary_chain import SummaryChain
 from ...storage.database import MessageRepository
-from ...pipeline.preprocessing import filter_msgs
+from ...pipeline import filter_msgs
 from ...config import get_config
 
 
