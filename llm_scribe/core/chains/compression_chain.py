@@ -4,7 +4,7 @@ from ...prompts.templates import CompressionPromptTemplate
 
 
 class CompressionChain:
-    """记忆压缩链，用于压缩旧记忆"""
+    """记忆压缩链"""
 
     def __init__(self, llm):
         self.llm = llm
@@ -13,8 +13,10 @@ class CompressionChain:
         prompt = prompt_template.PROMPT
         self.chain = prompt | self.llm | StrOutputParser()
 
-    async def invoke(self, summaries: List[str]) -> str:
-        """压缩摘要"""
+    async def invoke(
+            self,
+            summaries: List[str],
+    ) -> str:
         summaries_text = "\n\n---\n\n".join(summaries)
         result = await self.chain.ainvoke({"summaries": summaries_text})
         return result

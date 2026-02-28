@@ -14,6 +14,8 @@ class CompressionPromptTemplate:
         ("human", "历史摘要：\n{summaries}\n\n请生成压缩后的摘要：")
     ])
     
-    def format(self, summaries: str) -> list:
-        """格式化提示词"""
+    def format(
+            self,
+            summaries: str
+    ) -> list:
         return self.PROMPT.format_messages(summaries=summaries)

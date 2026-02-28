@@ -1,4 +1,3 @@
-"""记忆管理器"""
 import time
 from typing import List, Dict, Optional
 from llm_scribe.memory.detail.episodic_memory import EpisodicMemory
@@ -15,13 +14,7 @@ class MemoryManager:
         vector_store: VectorMemoryStore = None,
         compression_llm = None
     ):
-        """
-        初始化记忆管理器
-        
-        Args:
-            vector_store: 向量存储实例，如果为 None 则创建默认实例
-            compression_llm: 用于记忆压缩的 LLM，如果为 None 则不启用压缩
-        """
+
         self.episodic = EpisodicMemory()
         self.semantic = SemanticMemory()
         self.vector_store = vector_store or VectorMemoryStore()
@@ -49,7 +42,7 @@ class MemoryManager:
         """
         timestamp = int(time.time())
         
-        # 添加到事件记忆（持久化到 MySQL）
+        # 添加到事件记忆
         self.episodic.add_episode(
             group_id,
             messages,
@@ -57,7 +50,7 @@ class MemoryManager:
             timestamp
         )
         
-        # 添加到语义记忆（持久化到 MySQL）
+        # 添加到语义记忆
         if concepts:
             self.semantic.add_concepts(group_id, concepts)
         
@@ -70,7 +63,7 @@ class MemoryManager:
                     event.get("timestamp", timestamp)
                 )
         
-        # 添加到向量存储（持久化到 ChromaDB）
+        # 添加到向量存储
         vector_metadata = {
             "timestamp": timestamp,
             "concepts": concepts or [],
@@ -96,9 +89,6 @@ class MemoryManager:
             group_id: 群组 ID
             query: 查询文本
             top_k: 返回最相关的 k 条记录
-            
-        Returns:
-            拼接后的上下文文本
         """
         docs = self.vector_store.search_similar_summaries(
             query,
@@ -120,9 +110,6 @@ class MemoryManager:
         Args:
             group_id: 群组 ID
             limit: 返回数量限制
-            
-        Returns:
-            事件记忆列表
         """
         return self.episodic.get_recent_episodes(group_id, limit)
     
@@ -132,9 +119,6 @@ class MemoryManager:
         
         Args:
             group_id: 群组 ID
-            
-        Returns:
-            概念列表
         """
         return self.semantic.get_concepts(group_id)
     
@@ -149,9 +133,6 @@ class MemoryManager:
         Args:
             group_id: 群组 ID
             limit: 返回数量限制
-            
-        Returns:
-            事件列表
         """
         return self.semantic.get_recent_events(group_id, limit)
     
@@ -166,21 +147,16 @@ class MemoryManager:
         Args:
             summaries: 摘要列表
             max_length: 最大长度
-            
-        Returns:
-            压缩后的摘要，如果未启用压缩则返回 None
         """
         if not self.compressor:
             return None
         
         if not self.compressor.should_compress(summaries):
             return summaries[0] if summaries else ""
-        
-        # 注意：这是异步方法，但这里返回协程对象
-        # 实际使用时需要 await
+
         return self.compressor.compress_summaries(summaries, max_length)
     
     @property
     def vector_store_instance(self) -> VectorMemoryStore:
-        """获取向量存储实例（用于需要直接访问的场景）"""
+        """获取向量存储实例"""
         return self.vector_store
