@@ -1,5 +1,5 @@
 from typing import List, Dict
-from llm_scribe.utils.time_utils import unix_to_shanghai
+from llm_scribe.common.time_utils import unix_to_shanghai
 
 
 def base_info(msgs: List[Dict]) -> Dict:

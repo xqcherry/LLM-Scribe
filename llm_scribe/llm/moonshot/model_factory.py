@@ -1,7 +1,7 @@
 from langchain_community.chat_models.moonshot import MoonshotChat
 from typing import Optional
+from llm_scribe.config import plugin_config as config
 from .token_counter import TokenCounter
-from ...config import get_config
 
 
 class MoonshotFactory:
@@ -13,13 +13,15 @@ class MoonshotFactory:
     }
 
     def __init__(self):
-        self.config = get_config()
+        self.config = config
         self.token_counter = TokenCounter()
-        self.api_key = self.config.moonshot_api_key
+        self.api_key = self.config.moonshot_api_key.get_secret_value()
 
         if not self.api_key:
-            raise ValueError("Moonshot API key is required. "
-                             "请在环境变量或 NoneBot 插件配置中设置 moonshot_api_key/llm_scribe_moonshot_api_key")
+            raise ValueError(
+                "Moonshot API key is empty. "
+                "请检查 .env 文件中的 MOONSHOT_API_KEY 配置。"
+            )
 
     def select_model(
         self,
@@ -28,8 +30,8 @@ class MoonshotFactory:
         safety_margin: float = 0.8,
     ) ->str:
         """根据 token 数量选择模型"""
-        totol_tokens = prompt_tokens + max_output_tokens
-        required_tokens = int(totol_tokens / safety_margin)
+        total_tokens = prompt_tokens + max_output_tokens
+        required_tokens = int(total_tokens / safety_margin)
 
         if required_tokens <= self.MODELS["moonshot-v1-8k"]["max_tokens"]:
             return "moonshot-v1-8k"
@@ -55,10 +57,10 @@ class MoonshotFactory:
                 print(f"使用默认模型: {model_name}")
 
         return MoonshotChat(
+            api_key=self.api_key,
             model=model_name,
             temperature=temperature,
             max_tokens=max_tokens,
-            api_key=self.api_key,
         )
 
     def estimate_cost(

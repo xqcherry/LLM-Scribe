@@ -1,5 +1,6 @@
 import tiktoken
 from typing import List, Dict
+from ...pipeline.cq_filter import cq_filter
 
 
 class TokenCounter:
@@ -15,7 +16,7 @@ class TokenCounter:
     def count_messages_tokens(self, messages: List[dict]) -> int:
         """计算消息列表的 token 数量"""
         text = "\n".join(
-            f"{m.get('sender_nickname', '')}: {m.get('raw_message', '')}"
+            f"{m.get('sender_nickname', '')}: {cq_filter(m.get('raw_message', ''))}"
             for m in messages
         )
         return self.count_tokens(text)

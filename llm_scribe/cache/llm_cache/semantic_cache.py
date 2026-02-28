@@ -3,47 +3,45 @@ import redis, json, time
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from ...config import get_config
+
+from llm_scribe.config import plugin_config as config
 from .cache_key import CacheKeyGenerator
 
 
+_semantic_model_instance = None
+def get_semantic_model():
+    """获取语义模型单例"""
+    global _semantic_model_instance
+    if _semantic_model_instance is None:
+        # 使用你指定的模型名
+        _semantic_model_instance = SentenceTransformer(
+            'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
+        )
+    return _semantic_model_instance
+
 class RedisSemanticCache:
     """基于 Redis 的语义缓存实现"""
-    
+
     def __init__(
-        self,
-        redis_client: redis.Redis = None,
-        embedding_model: SentenceTransformer = None,
-        similarity_threshold: float = None,
-        namespace: str = "llm_cache"
+            self,
+            namespace: str = "llm_cache"
     ):
-        """
-        Args:
-            redis_client: Redis 客户端
-            embedding_model: Embedding 模型
-            similarity_threshold: 相似度阈值
-            namespace: Redis key 命名空间
-        """
-        config = get_config()
-        self.redis = redis_client or redis.Redis(
+        password = config.redis_password.get_secret_value() \
+            if config.redis_password else None
+
+        self.redis = redis.Redis(
             host=config.redis_host,
             port=config.redis_port,
             db=config.redis_db,
-            password=config.redis_password,
-            decode_responses=False  # 需要二进制数据用于 numpy
+            password=password,
+            decode_responses=True
         )
-        
-        self.similarity_threshold = similarity_threshold or config.cache_similarity_threshold
+
+        self.similarity_threshold = config.cache_similarity_threshold
         self.namespace = namespace
         self.cache_key_gen = CacheKeyGenerator()
-        
-        # 使用本地 Embedding 模型
-        if embedding_model is None:
-            self.embedding_model = SentenceTransformer(
-                'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
-            )
-        else:
-            self.embedding_model = embedding_model
+
+        self.embedding_model = get_semantic_model()
     
     def _get_embedding(self, text: str) -> np.ndarray:
         """获取文本的 Embedding"""
@@ -72,7 +70,6 @@ class RedisSemanticCache:
                     cache_data.get("summary"),
                     cache_data.get("metadata", {})
                 ))
-        
         return results
     
     def get(
@@ -83,8 +80,7 @@ class RedisSemanticCache:
         """语义检索缓存"""
         query_text = self._messages_to_query(messages)
         query_embedding = self._get_embedding(query_text)
-        
-        # 获取该群组的所有缓存
+
         cached_queries = self._get_all_cached_queries(group_id)
         
         if not cached_queries:

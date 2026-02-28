@@ -1,22 +1,18 @@
 import pymysql
-from ...config import get_config
+from llm_scribe.config import plugin_config as config
 
 
 def _load_db_config():
-    cfg = get_config()
     return {
-        "host": cfg.db_host,
-        "port": int(cfg.db_port),
-        "user": cfg.db_user,
-        "password": cfg.db_password,
-        "database": cfg.db_name,
-        "charset": cfg.db_charset,
-    }
+        "host": config.db_host,
+        "port": config.db_port,
+        "user": config.db_user,
+        "password": config.db_password.get_secret_value(),
+        "database": config.db_name,
+        "charset": config.db_charset,
 
+    }
 
 def get_connection():
     """获取数据库连接"""
     return pymysql.connect(**_load_db_config())
-
-
-# 兼容旧接口的函数移到 repositories.py
