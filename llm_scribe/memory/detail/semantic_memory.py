@@ -7,7 +7,7 @@ class SemanticMemory:
     """语义记忆"""
 
     @staticmethod
-    def add_concept(
+    def add_concepts(
             group_id: int,
             concepts: List[str]
     ):

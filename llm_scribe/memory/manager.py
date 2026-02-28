@@ -14,11 +14,9 @@ class MemoryManager:
         vector_store: VectorMemoryStore = None,
         compression_llm = None
     ):
-
-        self.episodic = EpisodicMemory()
-        self.semantic = SemanticMemory()
         self.vector_store = vector_store or VectorMemoryStore()
-        self.compressor = MemoryCompressor(compression_llm) if compression_llm else None
+        self.compressor = MemoryCompressor(compression_llm) \
+                            if compression_llm else None
     
     def add_memory(
         self,
@@ -29,41 +27,27 @@ class MemoryManager:
         events: List[Dict] = None,
         metadata: Dict = None
     ):
-        """
-        添加记忆到所有子系统
-        
-        Args:
-            group_id: 群组 ID
-            messages: 消息列表
-            summary: 摘要文本
-            concepts: 提取的概念列表（可选）
-            events: 事件列表（可选）
-            metadata: 额外的元数据（可选）
-        """
+
         timestamp = int(time.time())
-        
-        # 添加到事件记忆
-        self.episodic.add_episode(
+        EpisodicMemory.add_episodic(
             group_id,
             messages,
             summary,
             timestamp
         )
-        
-        # 添加到语义记忆
+
         if concepts:
-            self.semantic.add_concepts(group_id, concepts)
+            SemanticMemory.add_concepts(group_id, concepts)
         
         if events:
             for event in events:
-                self.semantic.add_event(
+                SemanticMemory.add_event(
                     group_id,
                     event.get("event", ""),
                     event.get("participants", []),
                     event.get("timestamp", timestamp)
                 )
-        
-        # 添加到向量存储
+
         vector_metadata = {
             "timestamp": timestamp,
             "concepts": concepts or [],
@@ -82,14 +66,7 @@ class MemoryManager:
         query: str,
         top_k: int = 3
     ) -> str:
-        """
-        获取记忆上下文（从向量存储检索）
-        
-        Args:
-            group_id: 群组 ID
-            query: 查询文本
-            top_k: 返回最相关的 k 条记录
-        """
+
         docs = self.vector_store.search_similar_summaries(
             query,
             group_id,
@@ -98,65 +75,42 @@ class MemoryManager:
         
         contexts = [doc.page_content for doc in docs]
         return "\n\n".join(contexts)
-    
+
+    @staticmethod
     def get_recent_episodes(
-        self,
         group_id: int,
         limit: int = 5
     ) -> List[Dict]:
-        """
-        获取最近的事件记忆
-        
-        Args:
-            group_id: 群组 ID
-            limit: 返回数量限制
-        """
-        return self.episodic.get_recent_episodes(group_id, limit)
-    
-    def get_concepts(self, group_id: int) -> List[str]:
-        """
-        获取群组的概念列表
-        
-        Args:
-            group_id: 群组 ID
-        """
-        return self.semantic.get_concepts(group_id)
-    
+
+        return EpisodicMemory.get_episodic(group_id, limit)
+
+    @staticmethod
+    def get_concepts(group_id: int) -> List[Dict]:
+
+        return SemanticMemory.get_concepts(group_id)
+
+    @staticmethod
     def get_recent_events(
-        self,
         group_id: int,
         limit: int = 10
     ) -> List[Dict]:
-        """
-        获取最近的语义事件
-        
-        Args:
-            group_id: 群组 ID
-            limit: 返回数量限制
-        """
-        return self.semantic.get_recent_events(group_id, limit)
+
+        return SemanticMemory.get_events(group_id, limit)
     
-    def compress_memories(
+    async def compress_memories(
         self,
         summaries: List[str],
         max_length: int = 500
     ) -> Optional[str]:
-        """
-        压缩多个记忆摘要
-        
-        Args:
-            summaries: 摘要列表
-            max_length: 最大长度
-        """
+
         if not self.compressor:
             return None
-        
-        if not self.compressor.should_compress(summaries):
+
+        if not MemoryCompressor.is_compress(summaries):
             return summaries[0] if summaries else ""
 
-        return self.compressor.compress_summaries(summaries, max_length)
+        return await self.compressor.compress_summaries(summaries, max_len=max_length)
     
     @property
     def vector_store_instance(self) -> VectorMemoryStore:
-        """获取向量存储实例"""
         return self.vector_store
