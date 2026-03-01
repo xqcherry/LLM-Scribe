@@ -4,3 +4,17 @@
 config.env
 config.local
 *.local
+
+# Python / 缓存
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 运行时数据（Chroma / Redis 挂载目录）
+/data/
+
+# VSCode / 编辑器
+.vscode/
+
+# 模型
+/models/

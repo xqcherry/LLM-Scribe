@@ -1,3 +1,0 @@
-# Optional Model SDKs
-anthropic
-google-generativeai
