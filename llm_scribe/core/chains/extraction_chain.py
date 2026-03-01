@@ -1,14 +1,16 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 from pydantic import BaseModel, Field
-from langchain_core.output_parsers import StrOutputParser
-from ...prompts.templates import ExtractionPromptTemplate
+
+from langchain_core.output_parsers import JsonOutputParser
+from llm_scribe.prompts.templates import ExtractionPromptTemplate
+from llm_scribe.pipeline.cq_filter import cq_filter
 
 
 class ExtractionResult(BaseModel):
-    """提取结果"""
-    concepts: List[str] = Field(description="关键概念列表")
-    events: List[str] = Field(description="重要事件列表")
-    quotes: List[str] = Field(description="关键引用列表")
+    """提取结果模型"""
+    concepts: List[str] = Field(default_factory=list, description="关键概念列表")
+    events: List[str] = Field(default_factory=list, description="重要事件列表")
+    quotes: List[str] = Field(default_factory=list, description="关键引用列表")
 
 
 class ExtractionChain:
@@ -17,24 +19,45 @@ class ExtractionChain:
     def __init__(self, llm):
         self.llm = llm
 
-        prompt_template = ExtractionPromptTemplate()
-        prompt = prompt_template.PROMPT
-        self.chain = prompt | self.llm | StrOutputParser()
+        self.output_parser = JsonOutputParser(pydantic_object=ExtractionResult)
+        self.prompt = ExtractionPromptTemplate().PROMPT
 
-    async def invoke(self, messages: List[Dict]) -> ExtractionResult:
-        """提取实体"""
-        messages_text = "\n".join(
-            f"{m.get('sender_nickname', '')}: {m.get('raw_message', '')}"
-            for m in messages
-        )
+        self.chain = self.prompt | self.llm | self.output_parser
 
-        result_text = await self.chain.ainvoke({"messages": messages_text})
+    async def invoke(
+            self,
+            messages: List[Dict[str, Any]]
+    ) -> ExtractionResult:
+        """异步提取实体"""
+        if not messages:
+            return ExtractionResult()
 
-        # 解析 JSON（简化版，实际应该用 JSON parser）
-        import json
+        lines = []
+        for m in messages:
+            nickname = m.get('sender_nickname', '未知')
+            content = cq_filter(m.get('raw_message', ''))
+
+            if content and content.strip():
+                lines.append(f"{nickname}: {content.strip()}")
+
+        if not lines:
+            return ExtractionResult()
+        messages_text = "\n".join(lines)
+
         try:
-            result_dict = json.loads(result_text)
-            return ExtractionResult(**result_dict)
+            result_data = await self.chain.ainvoke({
+                "messages": messages_text,
+                "format_instructions": self.output_parser.get_format_instructions()
+            })
+
+            if isinstance(result_data, dict):
+                return ExtractionResult(**result_data)
+            elif isinstance(result_data, ExtractionResult):
+                return result_data
+
+            return ExtractionResult()
+
         except Exception as e:
-            print(f"extract error: {e}")
+            print(f"ExtractionChain 运行异常: {e}")
+            print(f"当前输入文本长度: {len(messages_text)}")
             return ExtractionResult()

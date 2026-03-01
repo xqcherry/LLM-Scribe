@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from llm_scribe.config import plugin_config as config
-from .cache_key import CacheKeyGenerator
+from llm_scribe.cache.llm_cache.cache_key import CacheKeyGenerator
 
 
 _semantic_model_instance = None

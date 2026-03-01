@@ -20,7 +20,7 @@ HELP_TEXT = (
 
 @smy_cmd.handle()
 async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
-    from .core.graph import SummaryGraph
+    from llm_scribe.core.graph import SummaryGraph
 
     group_id = event.group_id
     text = args.extract_plain_text().strip()

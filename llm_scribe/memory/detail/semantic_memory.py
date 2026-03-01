@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict
-from ...storage.database.connection import get_connection
+from llm_scribe.storage.database.connection import get_connection
 
 
 class SemanticMemory:

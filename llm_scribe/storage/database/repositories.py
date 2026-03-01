@@ -1,6 +1,6 @@
 import pymysql
 from typing import List, Dict
-from .connection import get_connection
+from llm_scribe.storage.database.connection import get_connection
 
 
 class MessageRepository:

@@ -1,8 +1,9 @@
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from typing import List, Dict
-from ..models.summary import SummaryOutput
-from ...prompts.templates import SummaryPromptTemplate
+from llm_scribe.core.models.summary import SummaryOutput
+from llm_scribe.prompts.templates import SummaryPromptTemplate
+from llm_scribe.pipeline.cq_filter import cq_filter
 
 
 class SummaryChain:
@@ -27,7 +28,7 @@ class SummaryChain:
     ) -> SummaryOutput:
         """生成摘要"""
         messages_text = "\n".join(
-            f"{m.get('sender_nickname', '')}: {m.get('raw_message', '')}"
+            f"{m.get('sender_nickname', '')}: {cq_filter(m.get('raw_message', ''))}"
             for m in messages
         )
 

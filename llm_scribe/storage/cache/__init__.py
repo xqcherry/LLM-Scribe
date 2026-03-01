@@ -1,3 +1,5 @@
-from ...cache.data_cache.redis_cache import RedisDataCache
+from llm_scribe.cache.data_cache.redis_cache import RedisDataCache
 
-__all__ = ["RedisDataCache"]
+__all__ = [
+    "RedisDataCache"
+]

@@ -1,5 +1,5 @@
 from typing import Literal
-from ...llm.moonshot.model_factory import MoonshotFactory
+from llm_scribe.llm.moonshot.model_factory import MoonshotFactory
 
 
 class ModelSelector:

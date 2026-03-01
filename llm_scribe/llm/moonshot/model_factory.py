@@ -1,7 +1,7 @@
 from langchain_community.chat_models.moonshot import MoonshotChat
 from typing import Optional
 from llm_scribe.config import plugin_config as config
-from .token_counter import TokenCounter
+from llm_scribe.llm.moonshot.token_counter import TokenCounter
 
 
 class MoonshotFactory:

@@ -11,12 +11,7 @@ class ExtractionPromptTemplate:
             2. 重要事件（发生的事情）
             3. 关键引用（有代表性的发言）
             
-            输出格式为 JSON：
-            {
-                "concepts": ["概念1", "概念2"],
-                "events": ["事件1", "事件2"],
-                "quotes": ["引用1", "引用2"]
-            }"""),
+            {format_instructions}"""),
         ("human", "聊天内容：\n{messages}")
     ])
     

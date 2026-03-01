@@ -1,5 +1,5 @@
 from typing import List
-from ...core.chains.compression_chain import CompressionChain
+from llm_scribe.core.chains.compression_chain import CompressionChain
 
 
 class MemoryCompressor:

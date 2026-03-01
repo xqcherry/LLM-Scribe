@@ -1,16 +1,16 @@
 import time
-from typing import cast, Any
+from typing import cast, Any, List, Dict
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
-from .state import SummaryState
-from ...llm.moonshot.model_factory import MoonshotFactory
-from ...cache.llm_cache import LLMCacheFactory
-from ...memory import MemoryManager
-from ...retrieval import RAGRetriever, HybridSearch
-from ...core.chains.summary_chain import SummaryChain
-from ...storage.database import MessageRepository
-from ...pipeline import filter_msgs
-from ...config import get_config
+from llm_scribe.core.graph.state import SummaryState
+from llm_scribe.llm.moonshot.model_factory import MoonshotFactory
+from llm_scribe.cache.llm_cache import LLMCacheFactory
+from llm_scribe.memory import MemoryManager
+from llm_scribe.retrieval import RAGRetriever, HybridSearch
+from llm_scribe.core.chains.summary_chain import SummaryChain
+from llm_scribe.pipeline import filter_msgs
+from llm_scribe.config import plugin_config as config
+from llm_scribe.storage.database.repositories import MessageRepository
 
 
 class SummaryGraph:
@@ -19,27 +19,28 @@ class SummaryGraph:
     def __init__(
         self,
         model_factory: MoonshotFactory = None,
-        llm_cache = None,
         memory_manager: MemoryManager = None,
         use_hybrid_search: bool = None
     ):
+        # 核心模型工厂
         self.model_factory = model_factory or MoonshotFactory()
-        self.llm_cache = llm_cache or LLMCacheFactory.create_cache()
+        # 语义缓存
+        self.llm_cache = LLMCacheFactory.create_cache()
+        # 记忆管理器
         self.memory_manager = memory_manager or MemoryManager()
-        
-        # 获取配置
-        config = get_config()
+
+        # 检索配置
         if use_hybrid_search is None:
-            use_hybrid_search = getattr(config, 'retrieval_use_hybrid_search', True)
+            use_hybrid_search = config.retrieval_use_hybrid_search
         
         # 初始化检索器
         rag_retriever = RAGRetriever(
             self.memory_manager.vector_store_instance,
             self.model_factory,
-            use_compression=getattr(config, 'retrieval_use_compression', True)
+            use_compression=config.retrieval_use_compression
         )
         
-        # 使用混合检索（推荐）或直接使用 RAGRetriever
+        # 使用混合检索
         if use_hybrid_search:
             self.retriever = HybridSearch(rag_retriever)
         else:
@@ -63,25 +64,24 @@ class SummaryGraph:
         workflow.add_node("save_cache", cast(Any, self.save_cache))
         workflow.add_node("save_memory", cast(Any, self.save_memory))
         
-        # 定义边
+        # 定义边,编排工作流
         workflow.set_entry_point("load_messages")
         workflow.add_edge("load_messages", "filter_messages")
         workflow.add_edge("filter_messages", "check_cache")
-        
-        # 缓存路由
+
         workflow.add_conditional_edges(
             "check_cache",
             self.route_cache,
             {"hit": END, "miss": "count_tokens"}
         )
-        
+
         workflow.add_edge("count_tokens", "select_model")
         workflow.add_edge("select_model", "retrieve_memory")
         workflow.add_edge("retrieve_memory", "generate_summary")
         workflow.add_edge("generate_summary", "save_cache")
         workflow.add_edge("save_cache", "save_memory")
         workflow.add_edge("save_memory", END)
-        
+
         return workflow.compile()
     
     def load_messages(self, state: SummaryState) -> SummaryState:
@@ -95,7 +95,6 @@ class SummaryGraph:
     @staticmethod
     def filter_messages(state: SummaryState) -> SummaryState:
         """过滤消息"""
-        config = get_config()
         state["filtered_messages"] = filter_msgs(
             state["raw_messages"],
             config.ignore_qq
@@ -103,11 +102,10 @@ class SummaryGraph:
         return state
     
     def check_cache(self, state: SummaryState) -> SummaryState:
-        """检查缓存"""
+        """检查Redis缓存"""
         cached = self.llm_cache.get(
-            state["group_id"],
-            state["hours"],
-            state["filtered_messages"]
+            group_id=state["group_id"],
+            messages=state["filtered_messages"]
         )
         
         if cached:
@@ -139,35 +137,30 @@ class SummaryGraph:
         )
         return state
     
-    def retrieve_memory(self, state: SummaryState) -> SummaryState:
-        """检索记忆（使用改进的 RAG 检索）"""
-        query = f"群组 {state['group_id']} 最近 {state['hours']} 小时的聊天摘要"
+    async def retrieve_memory(self, state: SummaryState) -> SummaryState:
+        """检索RAG记忆"""
+        query = f"群组 {state['group_id']} 历史讨论重点"
         
         # 使用改进的检索器
         if isinstance(self.retriever, HybridSearch):
             # 使用混合检索（向量检索 + 重排序）
-            result = self.retriever.search(
-                query=query,
-                group_id=state["group_id"],
-                top_k=5,
-                use_rerank=True
-            )
-            # 将 Document 列表转换为文本
-            contexts = [doc.page_content for doc in result]
-        else:
-            # 使用 RAGRetriever
-            result = self.retriever.retrieve_relevant_context(
+            result = await self.retriever.search(
                 query=query,
                 group_id=state["group_id"],
                 top_k=5
             )
-            contexts = [doc.page_content for doc in result]
-        
-        state["memory_context"] = "\n\n".join(contexts) if contexts else ""
+        else:
+            # 使用 RAGRetriever
+            result = await self.retriever.retrieve_relevant_context(
+                query=query,
+                group_id=state["group_id"]
+            )
+
+        state["memory_context"] = "\n\n".join([doc.page_content for doc in result]) if result else ""
         return state
     
     async def generate_summary(self, state: SummaryState) -> SummaryState:
-        """生成摘要"""
+        """生成LLM结构化摘要"""
         llm = self.model_factory.create_model(
             model_name=state["selected_model"]
         )
@@ -177,78 +170,73 @@ class SummaryGraph:
             state["filtered_messages"],
             state["memory_context"]
         )
-        
-        # 转换为字符串格式
         state["summary"] = self._format_summary(result)
         
-        # 从摘要结果中提取概念和事件
-        concepts = result.participants if hasattr(result, 'participants') else []
-        events = []
-        if hasattr(result, 'topics') and result.topics:
-            for topic in result.topics:
-                events.append({
-                    "event": topic.topic,
-                    "participants": topic.participants if hasattr(topic, 'participants') else [],
-                    "timestamp": int(time.time())
-                })
-        
+        # 提取 metadata
         state["metadata"] = {
             "model": state["selected_model"],
             "token_count": state["token_count"],
-            "concepts": concepts,
-            "events": events
+            "concepts": getattr(result, 'participants', []),
+            "events": self._extract_events_from_result(result)
         }
-        state["summary_output"] = result  # 保存原始结果以便后续使用
+        state["summary_output"] = result
         return state
 
     @staticmethod
-    def _format_summary(summary_output) -> str:
-        """格式化摘要输出"""
-        lines = [f"【整体摘要】\n{summary_output.overall_summary}\n"]
-        
-        if summary_output.topics:
-            lines.append("【话题总结】")
-            for topic in summary_output.topics:
-                lines.append(f"\n话题：{topic.topic}")
-                lines.append(f"摘要：{topic.summary}")
-                lines.append(f"参与者：{', '.join(topic.participants)}")
-        
-        if summary_output.key_quotes:
-            lines.append(f"\n【关键引用】\n" + "\n".join(summary_output.key_quotes))
-        
-        lines.append(f"\n【情感倾向】{summary_output.sentiment}")
-        
+    def _extract_events_from_result(result: Any) -> List[Dict]:
+        """解析话题事件"""
+        if not hasattr(result, 'topics') or not result.topics:
+            return []
+
+        return [
+            {
+                "event": t.topic,
+                "summary": t.summary,
+                "participants": getattr(t, 'participants', []),
+                "timestamp": int(time.time())
+            }
+            for t in result.topics
+        ]
+
+    @staticmethod
+    def _format_summary(res: Any) -> str:
+        """文本格式化展示（使用字面量列表合并优化风格）"""
+        lines = [
+            f"📊 【群聊摘要】",
+            f"🔍 核心摘要：\n{res.overall_summary}\n"
+        ]
+
+        if res.topics:
+            lines.append("💡 话题回顾：")
+            lines.extend([f"• {t.topic}" for t in res.topics[:5]])
+
+        if res.key_quotes:
+            lines.append(f"\n💬 精彩瞬间：\n“{res.key_quotes[0]}”")
+
         return "\n".join(lines)
     
     def save_cache(self, state: SummaryState) -> SummaryState:
-        """保存缓存"""
+        """保存到 Redis 语义缓存"""
         if not state.get("cache_hit"):
             self.llm_cache.put(
-                state["group_id"],
-                state["hours"],
-                state["filtered_messages"],
-                state["summary"],
-                state.get("metadata", {})
+                group_id=state["group_id"],
+                hours=state["hours"],
+                messages=state["filtered_messages"],
+                summary=state["summary"],
+                metadata=state.get("metadata", {})
             )
         return state
     
     def save_memory(self, state: SummaryState) -> SummaryState:
-        """保存记忆到所有子系统（事件记忆、语义记忆、向量存储）"""
-        # 从摘要中提取概念和事件（简化实现，实际可以从 SummaryOutput 中提取）
-        concepts = state.get("metadata", {}).get("concepts", [])
-        events = state.get("metadata", {}).get("events", [])
-        
-        # 使用 MemoryManager 的统一接口保存记忆
+        """存入长短期记忆系统（Chroma + MySQL）"""
+        meta = state.get("metadata", {})
         self.memory_manager.add_memory(
             group_id=state["group_id"],
             messages=state["filtered_messages"],
             summary=state["summary"],
-            concepts=concepts,
-            events=events,
-            metadata={
-                "hours": state["hours"],
-                **state.get("metadata", {})
-            }
+            concepts=meta.get("concepts", []),
+            events=meta.get("events", []),
+            metadata={"hours": state["hours"], **meta}
         )
         return state
     
@@ -266,8 +254,12 @@ class SummaryGraph:
             "metadata": {},
             "refresh_mode": "high",
             "cache_hit": False,
-            "cache_similarity": 0.0
+            "cache_similarity": 0.0,
+            "summary_output": None
         }
-        
-        result = await self.graph.ainvoke(cast(Any, initial_state))
-        return result["summary"]
+
+        try:
+            result = await self.graph.ainvoke(cast(Any, initial_state))
+            return result["summary"]
+        except Exception as e:
+            return f"日报生成失败 {e}"

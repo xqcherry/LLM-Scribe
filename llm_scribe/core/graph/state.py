@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Literal
+from typing import TypedDict, List, Dict, Literal, Any
 
 
 class SummaryState(TypedDict):
@@ -15,3 +15,4 @@ class SummaryState(TypedDict):
     refresh_mode: Literal["high", "delta", "low"]
     cache_hit: bool
     cache_similarity: float
+    summary_output: Any

@@ -23,8 +23,8 @@ class VectorMemoryStore(BaseVectorStore):
 
     def __init__(self):
         self.client = chromadb.HttpClient(
-            host=config.chromadb_host,
-            port=config.chromadb_port
+            host=config.chroma_host,
+            port=config.chroma_port
         )
 
         self.embeddings = get_embeddings()
