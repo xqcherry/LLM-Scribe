@@ -1,6 +1,7 @@
 from typing import List
 from langchain_core.output_parsers import StrOutputParser
-from src.prompts.templates import CompressionPromptTemplate
+
+from src.prompts.templates.compression_prompt import CompressionPromptTemplate
 
 
 class CompressionChain:

@@ -4,6 +4,6 @@ from src.prompts.templates.summary_prompt import SummaryPromptTemplate
 
 __all__ = [
     "CompressionPromptTemplate",
+    "ExtractionPromptTemplate",
     "SummaryPromptTemplate",
-    "ExtractionPromptTemplate"
 ]

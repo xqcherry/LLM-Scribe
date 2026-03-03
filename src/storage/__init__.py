@@ -1,3 +1,5 @@
-"""存储模块：包含数据库和缓存存储"""
+from src.storage.database.repositories import MessageRepository
 
-__all__ = []
+__all__ = [
+    "MessageRepository",
+]

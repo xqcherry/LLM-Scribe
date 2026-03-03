@@ -1,22 +1,12 @@
-from typing import Dict, List, Optional
+from typing import Dict, List
 import chromadb
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from src.llm.embedding.embedding_model import get_embeddings
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
 from src.config import plugin_config as config
 from src.memory.vector.vector_store_base import BaseVectorStore
 
-_embeddings_instance: Optional[HuggingFaceEmbeddings] = None
-def get_embeddings() -> HuggingFaceEmbeddings:
-    """获取 Embeddings 单例实例"""
-    global _embeddings_instance
-    if _embeddings_instance is None:
-        _embeddings_instance = HuggingFaceEmbeddings(
-            model_name=config.huggingface_model_name,
-            model_kwargs=config.huggingface_model_kwargs
-        )
-    return _embeddings_instance
 
 class VectorMemoryStore(BaseVectorStore):
     """基于 ChromaDB 的向量记忆存储"""

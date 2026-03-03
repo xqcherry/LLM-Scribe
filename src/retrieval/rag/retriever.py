@@ -2,7 +2,7 @@ from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 from langchain_core.documents import Document
 from typing import List
-from src.memory import VectorMemoryStore
+from src.memory.vector.vector_store import VectorMemoryStore
 from src.llm.moonshot.model_factory import MoonshotFactory
 from src.config import plugin_config as config
 

@@ -1,23 +1,12 @@
 from typing import Optional, List, Dict
 import redis, json, time
-from sentence_transformers import SentenceTransformer
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from src.config import plugin_config as config
+from src.llm.embedding.embedding_model import get_embeddings
 from src.cache.llm_cache.cache_key import CacheKeyGenerator
+from src.config import plugin_config as config
 
-
-_semantic_model_instance = None
-def get_semantic_model():
-    """获取语义模型单例"""
-    global _semantic_model_instance
-    if _semantic_model_instance is None:
-        # 使用你指定的模型名
-        _semantic_model_instance = SentenceTransformer(
-            'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
-        )
-    return _semantic_model_instance
 
 class RedisSemanticCache:
     """基于 Redis 的语义缓存实现"""
@@ -41,7 +30,7 @@ class RedisSemanticCache:
         self.namespace = namespace
         self.cache_key_gen = CacheKeyGenerator()
 
-        self.embedding_model = get_semantic_model()
+        self.embedding_model = get_embeddings()
     
     def _get_embedding(self, text: str) -> np.ndarray:
         """获取文本的 Embedding"""
