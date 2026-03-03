@@ -66,37 +66,18 @@ class RAGRetriever:
             top_k: int = 5
     ) -> List[Document]:
         try:
-            filter_dict = {"group_id": group_id}
+            self.base_retriever.search_kwargs.update({
+                "filter": {"group_id": str(group_id)},
+                "k": top_k
+            })
 
             if self.use_compression and self.compression_retriever:
-                results = await self.compression_retriever.aget_relevant_documents(
-                    query,
-                    metadata_filter=filter_dict
-                )
+                results = await self.compression_retriever.ainvoke(query)
             else:
-                results = await self.base_retriever.aget_relevant_documents(
-                    query,
-                    filter=filter_dict
-                )
+                results = await self.base_retriever.ainvoke(query)
 
-            filtered_results = self._filter_by_group_id(results, group_id)
-
-            return filtered_results[:top_k]
+            return results[:top_k]
 
         except Exception as e:
             print(f"检索失败: {e}")
             return self.vector_store.search_similar_summaries(query, group_id, top_k)
-
-    @staticmethod
-    def _filter_by_group_id(
-            documents: List[Document],
-            group_id: int
-    ) -> List[Document]:
-        """按 group_id 过滤文档"""
-        filtered = []
-        for doc in documents:
-            doc_group_id = doc.metadata.get('group_id') if isinstance(doc.metadata, dict) else getattr(doc.metadata,
-                                                                                                       'group_id', None)
-            if doc_group_id == group_id:
-                filtered.append(doc)
-        return filtered

@@ -34,7 +34,8 @@ class RedisSemanticCache:
     
     def _get_embedding(self, text: str) -> np.ndarray:
         """获取文本的 Embedding"""
-        return self.embedding_model.encode(text, convert_to_numpy=True)
+        vector = self.embedding_model.embed_query(text)
+        return np.array(vector)
     
     def _generate_key(self, group_id: int, query_hash: str) -> str:
         """生成 Redis key"""
