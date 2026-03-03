@@ -1,7 +1,8 @@
 """
-Moonshot 模型工厂适配器。
+通用 LLM 提供方工厂适配器。
 
-将现有的 `MoonshotFactory` 适配为领域层的 `LLMModelFactoryInterface`。
+将 `LLMProviderFactory` 适配为领域层的 `LLMModelFactoryInterface`，
+默认实现基于 Moonshot Chat，可替换为其他提供方。
 """
 
 from __future__ import annotations
@@ -9,14 +10,14 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from src.domain.services.llm_service import LLMModelFactoryInterface
-from src.infrastructure.llm.model_factory import MoonshotFactory as _MoonshotFactory
+from src.infrastructure.llm.model_factory import LLMProviderFactory
 
 
-class MoonshotFactoryAdapter(LLMModelFactoryInterface):
-    """将 MoonshotFactory 适配为领域层可依赖的工厂接口。"""
+class LLMProviderFactoryAdapter(LLMModelFactoryInterface):
+    """将 LLMProviderFactory 适配为领域层可依赖的工厂接口。"""
 
-    def __init__(self, inner: _MoonshotFactory | None = None) -> None:
-        self._inner = inner or _MoonshotFactory()
+    def __init__(self, inner: LLMProviderFactory | None = None) -> None:
+        self._inner = inner or LLMProviderFactory()
 
     @property
     def token_counter(self) -> Any:

@@ -1,7 +1,8 @@
 """
-Moonshot 模型工厂实现。
+通用 LLM 提供方模型工厂实现。
 
-从原先的 `src.llm.moonshot.model_factory` 迁移而来。
+默认使用 Moonshot Chat 模型，但通过命名与接口抽象，后续可以替换为任意
+兼容的开源或云端大模型提供方。
 """
 
 from typing import Optional
@@ -12,8 +13,8 @@ from src.config import plugin_config as config
 from src.infrastructure.llm.token_counter import TokenCounter
 
 
-class MoonshotFactory:
-    """Moonshot 模型工厂。"""
+class LLMProviderFactory:
+    """通用 LLM 提供方模型工厂。"""
 
     MODELS = {
         "moonshot-v1-8k": {"max_tokens": 8000, "cost_per_1k": 0.012},
@@ -24,12 +25,15 @@ class MoonshotFactory:
     def __init__(self) -> None:
         self.config = config
         self.token_counter = TokenCounter()
-        self.api_key = self.config.moonshot_api_key
+        # 兼容旧的 MOONSHOT_API_KEY，也支持更通用的 LLM_API_KEY
+        self.api_key = (
+            getattr(self.config, "llm_api_key", "") or self.config.moonshot_api_key
+        )
 
         if not self.api_key:
             raise ValueError(
-                "Moonshot API key is empty. "
-                "请检查 .env 文件中的 MOONSHOT_API_KEY 配置。"
+                "LLM API key is empty. "
+                "请在环境变量中设置 LLM_API_KEY 或兼容的 MOONSHOT_API_KEY。"
             )
 
     def select_model(

@@ -20,7 +20,7 @@ from src.infrastructure.persistence.message_repository_impl import (
 from src.infrastructure.cache.llm_cache_impl import RedisLLMCache
 from src.infrastructure.memory.memory_manager_impl import DefaultMemoryManager
 from src.infrastructure.retrieval.hybrid_retrieval_impl import HybridRetriever
-from src.infrastructure.llm.moonshot_factory_impl import MoonshotFactoryAdapter
+from src.infrastructure.llm.factory_impl import LLMProviderFactoryAdapter
 from src.infrastructure.retrieval.rag_retriever import RAGRetriever
 
 
@@ -37,7 +37,7 @@ class SummaryGraph:
     ):
         # 核心模型工厂
         self.model_factory: LLMModelFactoryInterface = (
-            model_factory or MoonshotFactoryAdapter()
+            model_factory or LLMProviderFactoryAdapter()
         )
         # 语义缓存（默认使用 Redis 实现）
         self.llm_cache: LLMCacheInterface = llm_cache or RedisLLMCache()
@@ -53,9 +53,9 @@ class SummaryGraph:
         # 初始化检索器（基于 RAG + HybridSearch）
         rag_retriever = RAGRetriever(
             self.memory_manager.vector_store_instance,
-            # 传入底层 Moonshot 工厂（适配器内部持有原工厂实例）
+            # 传入底层 LLM 提供方工厂（适配器内部持有具体实现实例）
             getattr(self.model_factory, "_inner", None)
-            or MoonshotFactoryAdapter()._inner,
+            or LLMProviderFactoryAdapter()._inner,
             use_compression=config.retrieval_use_compression,
         )
         self.retriever: RetrievalInterface = HybridRetriever(

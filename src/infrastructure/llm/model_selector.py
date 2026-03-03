@@ -1,19 +1,20 @@
 """
-Moonshot 模型选择策略。
+通用 LLM 模型选择策略。
 
-从原先的 `src.llm.moonshot.model_selector` 迁移而来。
+从原先的 Moonshot 专用实现抽象而来，用于根据任务类型与 token 数量选择
+合适的模型名称。
 """
 
 from typing import Literal
 
-from src.infrastructure.llm.model_factory import MoonshotFactory
+from src.infrastructure.llm.model_factory import LLMProviderFactory
 
 
 class ModelSelector:
     """模型选择策略。"""
 
-    def __init__(self, model_factory: MoonshotFactory | None = None) -> None:
-        self.model_factory = model_factory or MoonshotFactory()
+    def __init__(self, model_factory: LLMProviderFactory | None = None) -> None:
+        self.model_factory = model_factory or LLMProviderFactory()
 
     def select_by_task(
         self,

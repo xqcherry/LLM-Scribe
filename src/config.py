@@ -34,10 +34,10 @@ class Config(BaseModel):
         description="数据库字符集"
     )
 
-    # Moonshot API
-    moonshot_api_key: str = Field(
-        default=os.getenv("MOONSHOT_API_KEY", ""),
-        description="Moonshot API Key"
+    # 通用 LLM 提供方 API
+    llm_api_key: str = Field(
+        default=os.getenv("LLM_API_KEY"),
+        description="通用 LLM API Key",
     )
 
     # Redis 配置
@@ -61,7 +61,7 @@ class Config(BaseModel):
         description="模型运行参数"
     )
 
-    # --- RAG 策略 ---
+    # RAG 策略
     cache_similarity_threshold: float = Field(
         default=float(os.getenv("CACHE_SIMILARITY_THRESHOLD", "0.85"))
     )

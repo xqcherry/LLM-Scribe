@@ -11,7 +11,7 @@ from typing import List
 
 from src.config import plugin_config as config
 from src.infrastructure.memory.vector_store import VectorMemoryStore
-from src.llm.moonshot.model_factory import MoonshotFactory
+from src.infrastructure.llm.model_factory import LLMProviderFactory
 
 
 class RAGRetriever:
@@ -20,7 +20,7 @@ class RAGRetriever:
     def __init__(
         self,
         vector_store: VectorMemoryStore,
-        model_factory: MoonshotFactory,
+        model_factory: LLMProviderFactory,
         score_threshold: float | None = None,
         use_compression: bool = True,
         compression_model: str = "moonshot-v1-8k",
