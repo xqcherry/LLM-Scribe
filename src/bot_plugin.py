@@ -4,6 +4,11 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, Bot
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from src.application.services.group_summary_app_service import (
+    GroupSummaryApplicationService,
+)
+
+
 smy_cmd = on_command("sum", aliases={"summary"}, block=True)
 
 logger.success("[LLM-Scribe] 命令 sum/summary 已注册")
@@ -18,10 +23,12 @@ HELP_TEXT = (
     "(只支持 1~24 小时的整数)\n"
 )
 
+# 应用服务实例（当前为无状态实现，可直接复用）
+_summary_app_service = GroupSummaryApplicationService()
+
+
 @smy_cmd.handle()
 async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
-    from src.core.graph import SummaryGraph
-
     group_id = event.group_id
     text = args.extract_plain_text().strip()
     hours = 6
@@ -44,9 +51,8 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
             return
 
     try:
-        # 使用新的 SummaryGraph 工作流
-        graph = SummaryGraph()
-        summary_text = await graph.invoke(group_id, hours)
+        # 通过应用服务层调用摘要用例（内部仍然使用 SummaryGraph）
+        summary_text = await _summary_app_service.summarize_group(group_id, hours)
 
         if not summary_text or not isinstance(summary_text, str):
             await smy_cmd.send("未生成有效摘要内容。")
@@ -60,6 +66,7 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
         logger.error(f"[LLM-Scribe] 群 {group_id} 摘要生成失败: {e}")
         await smy_cmd.send(f"摘要生成失败: {e}")
 
+
 async def send_parts(bot, event, parts):
     for p in parts:
         p = p.strip()
@@ -67,4 +74,3 @@ async def send_parts(bot, event, parts):
             continue
         await bot.send(event, p)
         await asyncio.sleep(1)
-

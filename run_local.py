@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.core.graph.summary_graph import SummaryGraph
+from src.application.graph.summary_graph import SummaryGraph
 
 # ==========================================
 # 硬编码

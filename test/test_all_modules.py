@@ -29,7 +29,7 @@ def test_cq_filter():
     print_test_header("消息过滤模块 (cq_filter)")
     
     try:
-        from src.pipeline.cq_filter import cq_filter, filter_msgs
+        from src.infrastructure.pipeline.cq_filter import cq_filter, filter_msgs
         
         # 测试各种 CQ 码过滤
         test_cases = [
@@ -76,7 +76,7 @@ def test_time_utils():
     print_test_header("时间工具模块 (time_utils)")
     
     try:
-        from src.common.time_utils import unix_to_shanghai, shanghai_to_unix, now_shanghai
+        from src.infrastructure.common import unix_to_shanghai, shanghai_to_unix, now_shanghai
         
         # 测试 UNIX 时间戳转换
         test_timestamp = int(time.time())
@@ -463,7 +463,7 @@ def test_meta_extractor():
     print_test_header("元信息提取模块")
     
     try:
-        from src.pipeline.meta_extractor import base_info, info_to_str
+        from src.infrastructure.pipeline import base_info, info_to_str
         
         # 测试基础信息提取
         test_messages = [
@@ -587,8 +587,8 @@ def test_memory_details():
     print_test_header("事件记忆和语义记忆模块")
     
     try:
-        from src.memory.detail.episodic_memory import EpisodicMemory
-        from src.memory.detail.semantic_memory import SemanticMemory
+        from src.infrastructure.memory.detail.episodic_memory import EpisodicMemory
+        from src.infrastructure.memory.detail import SemanticMemory
         
         # 测试事件记忆
         test_group_id = 555555
@@ -651,7 +651,7 @@ def test_prompt_templates():
     print_test_header("提示词模板模块")
     
     try:
-        from src.prompts.templates.summary_prompt import SummaryPromptTemplate
+        from src.domain.prompts import SummaryPromptTemplate
         
         template = SummaryPromptTemplate()
         print_test_result(True, "摘要提示词模板初始化")
@@ -866,7 +866,7 @@ async def test_memory_compressor():
     print_test_header("记忆压缩器模块")
     
     try:
-        from src.memory.detail.memory_compressor import MemoryCompressor
+        from src.infrastructure.memory.detail.memory_compressor import MemoryCompressor
         from src.llm.moonshot.model_factory import MoonshotFactory
         
         # 检查 API Key
