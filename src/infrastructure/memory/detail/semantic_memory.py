@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict
-from src.storage.database.connection import get_connection
+from src.infrastructure.persistence.db_connection import get_connection
 
 
 class SemanticMemory:

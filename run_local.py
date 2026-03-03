@@ -20,9 +20,10 @@ async def debug_session():
     print("🚀 [Debug] 正在加载本地配置进行测试...")
     load_dotenv()
 
-    # 检查核心配置是否存在
-    if not os.getenv("MOONSHOT_API_KEY"):
-        print("❌ 错误: 没找到 API Key，请检查 .env 文件！")
+    # 检查核心配置是否存在（优先使用通用 LLM_API_KEY，兼容 MOONSHOT_API_KEY）
+    api_key = os.getenv("LLM_API_KEY")
+    if not api_key:
+        print("❌ 错误: 没找到 LLM_API_KEY，请检查 .env 文件！")
         return
 
     graph = SummaryGraph()
