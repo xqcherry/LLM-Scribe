@@ -1,6 +1,6 @@
-from llm_scribe.core.models.memory import MemoryState
-from llm_scribe.core.models.message import MessageModel
-from llm_scribe.core.models.summary import SummaryOutput, TopicSummary
+from src.core.models.memory import MemoryState
+from src.core.models.message import MessageModel
+from src.core.models.summary import SummaryOutput, TopicSummary
 
 __all__ = [
     "MemoryState",

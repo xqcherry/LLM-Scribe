@@ -1,7 +1,7 @@
 import json
 import pymysql
 from typing import List, Dict
-from llm_scribe.storage.database.connection import get_connection
+from src.storage.database.connection import get_connection
 
 
 class EpisodicMemory:

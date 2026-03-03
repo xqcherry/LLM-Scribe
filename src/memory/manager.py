@@ -1,9 +1,9 @@
 import time
 from typing import List, Dict, Optional
-from llm_scribe.memory.detail.episodic_memory import EpisodicMemory
-from llm_scribe.memory.detail.semantic_memory import SemanticMemory
-from llm_scribe.memory.detail.memory_compressor import MemoryCompressor
-from llm_scribe.memory.vector.vector_store import VectorMemoryStore
+from src.memory.detail.episodic_memory import EpisodicMemory
+from src.memory.detail.semantic_memory import SemanticMemory
+from src.memory.detail.memory_compressor import MemoryCompressor
+from src.memory.vector.vector_store import VectorMemoryStore
 
 
 class MemoryManager:

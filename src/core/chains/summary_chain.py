@@ -1,9 +1,9 @@
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from typing import List, Dict
-from llm_scribe.core.models.summary import SummaryOutput
-from llm_scribe.prompts.templates import SummaryPromptTemplate
-from llm_scribe.pipeline.cq_filter import cq_filter
+from src.core.models.summary import SummaryOutput
+from src.prompts.templates import SummaryPromptTemplate
+from src.pipeline.cq_filter import cq_filter
 
 
 class SummaryChain:

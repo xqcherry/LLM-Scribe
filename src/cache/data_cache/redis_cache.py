@@ -1,7 +1,7 @@
 import redis
 import json
 from typing import Optional, Any
-from llm_scribe.config import plugin_config as config
+from src.config import plugin_config as config
 
 
 class RedisDataCache:

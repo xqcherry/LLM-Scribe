@@ -4,8 +4,8 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from llm_scribe.config import plugin_config as config
-from llm_scribe.cache.llm_cache.cache_key import CacheKeyGenerator
+from src.config import plugin_config as config
+from src.cache.llm_cache.cache_key import CacheKeyGenerator
 
 
 _semantic_model_instance = None

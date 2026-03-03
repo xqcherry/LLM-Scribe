@@ -1,7 +1,7 @@
 from langchain_community.chat_models.moonshot import MoonshotChat
 from typing import Optional
-from llm_scribe.config import plugin_config as config
-from llm_scribe.llm.moonshot.token_counter import TokenCounter
+from src.config import plugin_config as config
+from src.llm.moonshot.token_counter import TokenCounter
 
 
 class MoonshotFactory:
@@ -15,7 +15,7 @@ class MoonshotFactory:
     def __init__(self):
         self.config = config
         self.token_counter = TokenCounter()
-        self.api_key = self.config.moonshot_api_key.get_secret_value()
+        self.api_key = self.config.moonshot_api_key
 
         if not self.api_key:
             raise ValueError(

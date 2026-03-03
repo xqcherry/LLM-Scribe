@@ -1,6 +1,6 @@
 import tiktoken
 from typing import List, Dict
-from llm_scribe.pipeline.cq_filter import cq_filter
+from src.pipeline.cq_filter import cq_filter
 
 
 class TokenCounter:

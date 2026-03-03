@@ -1,5 +1,5 @@
 import pymysql
-from llm_scribe.config import plugin_config as config
+from src.config import plugin_config as config
 
 
 def _load_db_config():
@@ -7,7 +7,7 @@ def _load_db_config():
         "host": config.db_host,
         "port": config.db_port,
         "user": config.db_user,
-        "password": config.db_password.get_secret_value(),
+        "password": config.db_password,
         "database": config.db_name,
         "charset": config.db_charset,
 

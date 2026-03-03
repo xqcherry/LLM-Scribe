@@ -1,6 +1,6 @@
-from llm_scribe.memory.detail.episodic_memory import EpisodicMemory
-from llm_scribe.memory.detail.memory_compressor import MemoryCompressor
-from llm_scribe.memory.detail.semantic_memory import SemanticMemory
+from src.memory.detail.episodic_memory import EpisodicMemory
+from src.memory.detail.memory_compressor import MemoryCompressor
+from src.memory.detail.semantic_memory import SemanticMemory
 
 __all__ = [
     "EpisodicMemory",

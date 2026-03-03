@@ -1,5 +1,5 @@
-from llm_scribe.storage.database.connection import get_connection
-from llm_scribe.storage.database.repositories import MessageRepository
+from src.storage.database.connection import get_connection
+from src.storage.database.repositories import MessageRepository
 
 __all__ = [
     "get_connection",

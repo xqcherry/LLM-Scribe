@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from langchain_core.documents import Document
-from llm_scribe.retrieval.rag.retriever import RAGRetriever
-from llm_scribe.retrieval.rag.reranker import Reranker
+from src.retrieval.rag.retriever import RAGRetriever
+from src.retrieval.rag.reranker import Reranker
 
 
 class HybridSearch:

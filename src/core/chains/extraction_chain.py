@@ -2,8 +2,8 @@ from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 
 from langchain_core.output_parsers import JsonOutputParser
-from llm_scribe.prompts.templates import ExtractionPromptTemplate
-from llm_scribe.pipeline.cq_filter import cq_filter
+from src.prompts.templates import ExtractionPromptTemplate
+from src.pipeline.cq_filter import cq_filter
 
 
 class ExtractionResult(BaseModel):

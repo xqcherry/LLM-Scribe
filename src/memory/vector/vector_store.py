@@ -4,8 +4,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 
-from llm_scribe.config import plugin_config as config
-from llm_scribe.memory.vector.vector_store_base import BaseVectorStore
+from src.config import plugin_config as config
+from src.memory.vector.vector_store_base import BaseVectorStore
 
 _embeddings_instance: Optional[HuggingFaceEmbeddings] = None
 def get_embeddings() -> HuggingFaceEmbeddings:

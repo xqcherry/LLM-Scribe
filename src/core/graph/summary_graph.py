@@ -2,15 +2,15 @@ import time
 from typing import cast, Any, List, Dict
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
-from llm_scribe.core.graph.state import SummaryState
-from llm_scribe.llm.moonshot.model_factory import MoonshotFactory
-from llm_scribe.cache.llm_cache import LLMCacheFactory
-from llm_scribe.memory import MemoryManager
-from llm_scribe.retrieval import RAGRetriever, HybridSearch
-from llm_scribe.core.chains.summary_chain import SummaryChain
-from llm_scribe.pipeline import filter_msgs
-from llm_scribe.config import plugin_config as config
-from llm_scribe.storage.database.repositories import MessageRepository
+from src.core.graph.state import SummaryState
+from src.llm.moonshot.model_factory import MoonshotFactory
+from src.cache.llm_cache import LLMCacheFactory
+from src.memory import MemoryManager
+from src.retrieval import RAGRetriever, HybridSearch
+from src.core.chains.summary_chain import SummaryChain
+from src.pipeline import filter_msgs
+from src.config import plugin_config as config
+from src.storage.database.repositories import MessageRepository
 
 
 class SummaryGraph:

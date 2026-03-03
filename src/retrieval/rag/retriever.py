@@ -2,9 +2,9 @@ from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 from langchain_core.documents import Document
 from typing import List
-from llm_scribe.memory import VectorMemoryStore
-from llm_scribe.llm.moonshot.model_factory import MoonshotFactory
-from llm_scribe.config import plugin_config as config
+from src.memory import VectorMemoryStore
+from src.llm.moonshot.model_factory import MoonshotFactory
+from src.config import plugin_config as config
 
 
 class RAGRetriever:

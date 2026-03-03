@@ -1,4 +1,4 @@
-from llm_scribe.common.time_utils import (
+from src.common.time_utils import (
     unix_to_shanghai,
     shanghai_to_unix,
     now_shanghai,
