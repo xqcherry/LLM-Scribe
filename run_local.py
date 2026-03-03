@@ -11,7 +11,7 @@ from src.core.graph.summary_graph import SummaryGraph
 # 硬编码
 # ==========================================
 TEST_GROUP_ID = 1017750994  # 你的测试群号
-TEST_HOURS = 6  # 追溯小时数
+TEST_HOURS = 24  # 追溯小时数
 
 
 # ==========================================
