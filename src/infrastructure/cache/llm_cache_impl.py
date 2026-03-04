@@ -10,14 +10,13 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from src.domain.services.cache_service import LLMCacheInterface
-from src.infrastructure.cache.semantic_cache import RedisSemanticCache
+from src.infrastructure.cache.detail.semantic_cache import RedisSemanticCache
 
 
 class RedisLLMCache(LLMCacheInterface):
     """基于 Redis 的 LLM 结果缓存实现。"""
 
     def __init__(self, inner: RedisSemanticCache | None = None) -> None:
-        # 默认构造新的 RedisSemanticCache，实现与旧工厂保持一致
         self._inner = inner or RedisSemanticCache()
 
     def get(self, group_id: int, messages: List[Dict]) -> Optional[Dict[str, Any]]:

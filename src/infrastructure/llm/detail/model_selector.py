@@ -7,7 +7,7 @@
 
 from typing import Literal
 
-from src.infrastructure.llm.model_factory import LLMProviderFactory
+from src.infrastructure.llm.detail.model_factory import LLMProviderFactory
 
 
 class ModelSelector:

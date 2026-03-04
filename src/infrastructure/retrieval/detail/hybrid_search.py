@@ -8,8 +8,8 @@ from typing import List, Dict, Any
 
 from langchain_core.documents import Document
 
-from src.infrastructure.retrieval.rag_retriever import RAGRetriever
-from src.infrastructure.retrieval.reranker import Reranker
+from src.infrastructure.retrieval.detail.rag_retriever import RAGRetriever
+from src.infrastructure.retrieval.detail.reranker import Reranker
 
 
 class HybridSearch:

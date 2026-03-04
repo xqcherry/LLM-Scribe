@@ -10,8 +10,8 @@ from langchain_core.documents import Document
 from typing import List
 
 from src.config import plugin_config as config
-from src.infrastructure.memory.vector_store import VectorMemoryStore
-from src.infrastructure.llm.model_factory import LLMProviderFactory
+from src.infrastructure.memory.detail.vector_store import VectorMemoryStore
+from src.infrastructure.llm.detail.model_factory import LLMProviderFactory
 
 
 class RAGRetriever:

@@ -1,9 +1,3 @@
-"""
-缓存键生成工具。
-
-从原先的 `src.cache.llm_cache.cache_key` 迁移而来。
-"""
-
 import hashlib
 import json
 from typing import List, Dict

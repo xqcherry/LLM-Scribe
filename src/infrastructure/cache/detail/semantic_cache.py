@@ -1,10 +1,3 @@
-"""
-基于 Redis 的语义缓存实现。
-
-从原先的 `src.cache.llm_cache.semantic_cache` 迁移而来，
-供 `RedisLLMCache` 作为内部实现使用。
-"""
-
 from __future__ import annotations
 
 from typing import Optional, List, Dict
@@ -17,8 +10,8 @@ import redis
 from sklearn.metrics.pairwise import cosine_similarity
 
 from src.config import plugin_config as config
-from src.infrastructure.cache.cache_key import CacheKeyGenerator
-from src.infrastructure.llm.embedding_model import get_embeddings
+from src.infrastructure.cache.detail.cache_key import CacheKeyGenerator
+from src.infrastructure.llm.detail.embedding_model import get_embeddings
 
 
 class RedisSemanticCache:

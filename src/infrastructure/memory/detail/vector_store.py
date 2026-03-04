@@ -1,9 +1,3 @@
-"""
-向量记忆存储实现。
-
-从原先的 `src.memory.vector.vector_store` 迁移而来。
-"""
-
 from typing import Dict, List
 
 import chromadb
@@ -11,7 +5,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
 from src.config import plugin_config as config
-from src.infrastructure.llm.embedding_model import get_embeddings
+from src.infrastructure.llm.detail.embedding_model import get_embeddings
 
 
 class VectorMemoryStore:

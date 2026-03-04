@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from src.domain.services.llm_service import LLMModelFactoryInterface
-from src.infrastructure.llm.model_factory import LLMProviderFactory
+from src.infrastructure.llm.detail.model_factory import LLMProviderFactory
 
 
 class LLMProviderFactoryAdapter(LLMModelFactoryInterface):
-    """将 LLMProviderFactory 适配为领域层可依赖的工厂接口"""
+    """将 detail 适配为领域层可依赖的工厂接口"""
 
     def __init__(self, inner: LLMProviderFactory | None = None) -> None:
         self._inner = inner or LLMProviderFactory()

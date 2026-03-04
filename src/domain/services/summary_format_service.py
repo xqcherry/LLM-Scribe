@@ -6,6 +6,7 @@ class SummaryFormatService:
 
     @staticmethod
     def format(result: Any) -> str:
+        """格式化话题摘要为文本（适配新的TopicSummary结构）"""
 
         lines: List[str] = ["📊 【今日群聊话题回顾】", ""]
         topics = getattr(result, "topics", [])
@@ -15,11 +16,19 @@ class SummaryFormatService:
 
         for i, t in enumerate(topics[:8], 1):
             topic_title = getattr(t, "topic", f"话题 {i}")
-            topic_summary = getattr(t, "summary", "（无详细内容）")
+            topic_detail = getattr(t, "detail", "（无详细内容）")
+            contributors = getattr(t, "contributors", [])
 
             # 格式：数字编号 + 加粗标题
             lines.append(f"{i}. #**{topic_title}**#")
-            lines.append(f"   └ {topic_summary}")
+            
+            # 参与者信息（如果有）
+            if contributors:
+                contributors_str = "、".join(contributors[:5])
+                lines.append(f"   👥 参与者: {contributors_str}")
+            
+            # 话题详情
+            lines.append(f"   └ {topic_detail}")
             lines.append("")
 
         return "\n".join(lines).strip()

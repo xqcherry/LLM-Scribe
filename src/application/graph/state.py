@@ -12,9 +12,9 @@ class SummaryState(TypedDict):
     selected_model: str
     memory_context: str
     summary: str
+    topics: List[Any]
     metadata: Dict
     refresh_mode: Literal["high", "delta", "low"]
     cache_hit: bool
     cache_similarity: float
-    summary_output: Any
 

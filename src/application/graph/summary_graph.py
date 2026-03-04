@@ -8,8 +8,8 @@ from src.application.graph.state import SummaryState
 from src.config import plugin_config as config
 from src.domain.repositories.message_repository import MessageRepositoryInterface
 from src.domain.services.cache_service import LLMCacheInterface
+from src.domain.services.msg_filter_service import MessageFilter
 from src.domain.services.summary_format_service import SummaryFormatService
-from src.domain.services.message_filter_service import MessageFilterService
 from src.domain.services.memory_service import MemoryManagerInterface
 from src.domain.services.llm_service import LLMModelFactoryInterface
 from src.domain.entities.analysis_result import (
@@ -18,15 +18,11 @@ from src.domain.entities.analysis_result import (
     ActivityStatistics,
     TokenUsage,
 )
-from src.infrastructure.persistence.message_repository_impl import (
-    MySQLMessageRepository,
-)
-from src.infrastructure.cache.llm_cache_impl import RedisLLMCache
-from src.infrastructure.memory.memory_manager_impl import DefaultMemoryManager
-from src.infrastructure.pipeline.meta_extractor import compute_message_meta
+from src.infrastructure.persistence.message_repository_impl import MySQLMessageRepository
+from src.infrastructure.pipeline.detail.meta_extractor import compute_message_meta
 from src.infrastructure.retrieval.hybrid_retrieval_impl import HybridRetriever
 from src.infrastructure.llm.factory_impl import LLMProviderFactoryAdapter
-from src.infrastructure.retrieval.rag_retriever import RAGRetriever
+from src.infrastructure.retrieval.detail.rag_retriever import RAGRetriever
 
 
 class SummaryGraph:
@@ -39,10 +35,13 @@ class SummaryGraph:
         use_hybrid_search: bool = None,
         message_repository: MessageRepositoryInterface | None = None,
         llm_cache: LLMCacheInterface | None = None,
+        filter_service: MessageFilter | None = None,
     ):
         self.model_factory = model_factory or LLMProviderFactoryAdapter()
         self.message_repo = message_repository or MySQLMessageRepository()
-        # [mock测试] self.llm_cache = llm_cache or RedisLLMCache()
+        self.filter_service = filter_service or MessageFilter()
+
+        # [mock测试] self.llm_cache = llm_cache or detail()
         # [mock测试] self.memory_manager = memory_manager or DefaultMemoryManager()
         self.llm_cache = llm_cache
         self.memory_manager = memory_manager
@@ -114,10 +113,10 @@ class SummaryGraph:
         )
         return state
 
-    @staticmethod
-    def filter_messages(state: SummaryState) -> SummaryState:
+
+    def filter_messages(self, state: SummaryState) -> SummaryState:
         """过滤消息"""
-        state["filtered_messages"] = MessageFilterService.filter(
+        state["filtered_messages"] = self.filter_service.get_cleaned_messages(
             state["raw_messages"]
         )
         return state
@@ -146,6 +145,7 @@ class SummaryGraph:
             state["cache_hit"] = False
 
         return state
+
 
     @staticmethod
     def route_cache(state: SummaryState) -> str:
@@ -198,18 +198,18 @@ class SummaryGraph:
 
         llm = self.model_factory.create_model(
             model_name=state["selected_model"])
-        chain = SummaryChain(llm)
 
-        # 1. AI 调用
+        chain = SummaryChain(llm, max_topics=5)
         result = await chain.invoke(
             state["filtered_messages"],
             state["memory_context"])
 
-        # 2. 状态更新
-        state["summary_output"] = result
+        # 状态更新
+        state["topics"] = [
+            t.model_dump() if hasattr(t, "model_dump") else t
+            for t in result.topics
+        ]
         state["summary"] = SummaryFormatService.format(result)
-
-        # 3. 组装 Metadata
         state["metadata"] = self._assemble_metadata(state, result)
 
         return state
@@ -255,24 +255,44 @@ class SummaryGraph:
             token_usage=token_usage,
         )
 
+        # 处理话题数据
+        topic_events = []
+        if result and hasattr(result, "topics") and result.topics:
+            topic_events = [
+                {
+                    "event": t.topic,
+                    "summary": t.detail,
+                    "participants": t.contributors,
+                    "timestamp": int(time.time()),
+                }
+                for t in result.topics
+            ]
+
+        # 提取所有参与者（从话题中聚合）
+        all_participants = set()
+        if result and hasattr(result, "topics") and result.topics:
+            for topic in result.topics:
+                all_participants.update(topic.contributors)
+
         return {
             "model": state["selected_model"],
             "token_count": state["token_count"],
-            "concepts": getattr(result, "participants", []),
-            "events": self._extract_events(result),
+            "concepts": list(all_participants),
+            "events": topic_events,
+            "topics": topic_events,
             "analysis_result": analysis
         }
 
 
     @staticmethod
     def _extract_events(result: Any) -> List[Dict]:
-        """解析 LLM 结果中的话题"""
+        """解析 LLM 结果中的话题（适配新的TopicSummary结构）"""
         topics = getattr(result, "topics", [])
         return [
             {
                 "event": t.topic,
-                "summary": t.summary,
-                "participants": getattr(t, "participants", []),
+                "summary": t.detail,
+                "participants": getattr(t, "contributors", []),
                 "timestamp": int(time.time()),
             } for t in topics
         ]
@@ -325,7 +345,7 @@ class SummaryGraph:
         return state
 
 
-    async def invoke(self, group_id: int, hours: int) -> str:
+    async def invoke(self, group_id: int, hours: int) -> Dict[str, Any]:
         """执行工作流"""
         initial_state: SummaryState = {
             "group_id": group_id,
@@ -336,16 +356,16 @@ class SummaryGraph:
             "selected_model": "",
             "memory_context": "",
             "summary": "",
+            "topics": [],
             "metadata": {},
             "refresh_mode": "high",
             "cache_hit": False,
             "cache_similarity": 0.0,
-            "summary_output": None,
         }
 
         try:
             result = await self.graph.ainvoke(cast(Any, initial_state))
-            return result["summary"]
-        except Exception as e:  # noqa: BLE001
-            return f"日报生成失败 {e}"
+            return result
+        except Exception as e:
+            raise e
 

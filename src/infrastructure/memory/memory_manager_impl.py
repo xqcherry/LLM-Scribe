@@ -1,16 +1,10 @@
-"""
-记忆系统基础设施实现。
-
-从原先的 `src.memory.manager` 迁移而来，统一对接领域接口。
-"""
-
 from __future__ import annotations
 
 import time
 from typing import Any, Dict, List
 
 from src.domain.services.memory_service import MemoryManagerInterface
-from src.infrastructure.memory.vector_store import VectorMemoryStore
+from src.infrastructure.memory.detail.vector_store import VectorMemoryStore
 from src.infrastructure.memory.detail.episodic_memory import EpisodicMemory
 from src.infrastructure.memory.detail import SemanticMemory
 from src.infrastructure.memory.detail.memory_compressor import MemoryCompressor

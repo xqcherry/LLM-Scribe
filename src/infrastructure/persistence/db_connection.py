@@ -1,10 +1,3 @@
-"""
-数据库连接基础设施。
-
-从原先的 `src.storage.database.connection` 迁移而来，
-保持配置与行为完全一致。
-"""
-
 import pymysql
 from src.config import plugin_config as config
 

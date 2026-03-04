@@ -3,7 +3,7 @@ from typing import Optional
 from langchain_community.chat_models.moonshot import MoonshotChat
 
 from src.config import plugin_config as config
-from src.infrastructure.llm.token_counter import TokenCounter
+from src.infrastructure.llm.detail.token_counter import TokenCounter
 
 
 class LLMProviderFactory:

@@ -12,8 +12,8 @@ from typing import List
 from langchain_core.documents import Document
 
 from src.domain.services.retrieval_service import RetrievalInterface
-from src.infrastructure.retrieval.hybrid_search import HybridSearch
-from src.infrastructure.retrieval.rag_retriever import RAGRetriever
+from src.infrastructure.retrieval.detail.hybrid_search import HybridSearch
+from src.infrastructure.retrieval.detail.rag_retriever import RAGRetriever
 
 
 class HybridRetriever(RetrievalInterface):
