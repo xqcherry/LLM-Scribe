@@ -278,7 +278,6 @@ class SummaryGraph:
             "model": state["selected_model"],
             "token_count": state["token_count"],
             "concepts": list(all_participants),
-            "events": topic_events,
             "topics": topic_events,
             "analysis_result": analysis
         }

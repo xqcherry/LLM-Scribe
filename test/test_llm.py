@@ -1,8 +1,8 @@
 import asyncio
 import json
+import traceback
 from src.application.graph.summary_graph import SummaryGraph
 from src.infrastructure.persistence.message_repository_impl import MySQLMessageRepository
-
 
 async def test():
     # 1. 初始化
@@ -13,41 +13,33 @@ async def test():
         memory_manager=None
     )
 
-    print("🚀 正在从 MySQL 获取数据并请求 LLM...")
+    print("🚀 正在请求完整数据流水线...")
 
-    # 2. 调用并获取完整 State
     try:
+        # 调用 Graph
         state = await graph.invoke(group_id=1017750994, hours=24)
 
-        # 3. 输出排版后的摘要
-        print("\n" + "=" * 30 + " 摘要内容 " + "=" * 30)
+        # A. 显示排版后的完整摘要 (这里本来就是完整的)
+        print("\n" + " ✨ 最终生成完整摘要 ".center(60, "="))
         print(state["summary"])
 
-        # 4. 输出元数据 (Metadata)
-        print("\n" + "=" * 30 + " 元数据 (Meta) " + "=" * 30)
-        meta = state["metadata"]
+        # B. 显示结构化话题的完整内容 (去掉了 [:60] 限制)
+        print("\n" + " 📅 完整话题列表 (Topics) ".center(60, "="))
+        topics = state.get("topics", [])
+        for i, topic in enumerate(topics, 1):
+            print(f"\n话题 {i}: 【{topic.get('topic')}】")
+            print(f"参与者: {', '.join(map(str, topic.get('contributors', [])))}")
+            print(f"详细内容: {topic.get('detail')}") # 这里现在会完整显示，不截断
 
-        # 打印关键统计信息
-        if "analysis_result" in meta:
-            analysis = meta["analysis_result"]
-            stats = analysis.statistics
-            usage = analysis.token_usage
-            print(f"📊 统计概览:")
-            print(f"  - 消息总数: {stats.message_count}")
-            print(f"  - 参与人数: {stats.participant_count}")
-            print(f"  - Token 消耗: {usage.total_tokens}")
-            print(f"  - 预估成本: ${usage.estimated_cost:.4f}")
-            print(f"  - 时间跨度: {stats.time_span}")
-
-        print(f"\n🏷️  核心概念 (Concepts): {meta.get('concepts', [])}")
-
-        print(f"\n📅 提取事件 (Events):")
-        for event in meta.get("events", []):
-            print(f"  - [{event['event']}] {event['summary'][:50]}...")
+        # C. 显示元数据的原始结构 (用于排查字段是否完整)
+        print("\n" + " 📦 原始 Metadata JSON ".center(60, "="))
+        # 排除 analysis_result 这种复杂对象，只看基础字段
+        printable_meta = {k: v for k, v in state["metadata"].items() if k != "analysis_result"}
+        print(json.dumps(printable_meta, indent=2, ensure_ascii=False))
 
     except Exception as e:
         print(f"❌ 运行失败: {e}")
-
+        traceback.print_exc()
 
 if __name__ == "__main__":
     asyncio.run(test())
