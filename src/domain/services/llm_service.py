@@ -1,9 +1,3 @@
-"""
-LLM 工厂领域接口。
-
-用于将具体的大模型提供方（如 Moonshot）隔离在基础设施层。
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -37,3 +31,11 @@ class LLMModelFactoryInterface(ABC):
     ) -> Any:
         """创建底层 LLM 实例。"""
 
+    @abstractmethod
+    def estimate_cost(
+            self,
+            model_name: str,
+            token_count: int
+    ) -> float:
+        """根据模型名称和 token 数量预估费用"""
+        pass

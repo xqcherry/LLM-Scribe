@@ -1,6 +1,5 @@
 import time
 from typing import cast, Any, List, Dict
-
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 
@@ -12,13 +11,19 @@ from src.domain.services.cache_service import LLMCacheInterface
 from src.domain.services.summary_format_service import SummaryFormatService
 from src.domain.services.message_filter_service import MessageFilterService
 from src.domain.services.memory_service import MemoryManagerInterface
-from src.domain.services.retrieval_service import RetrievalInterface
 from src.domain.services.llm_service import LLMModelFactoryInterface
+from src.domain.entities.analysis_result import (
+    ConversationAnalysisResult,
+    ConversationStatistics,
+    ActivityStatistics,
+    TokenUsage,
+)
 from src.infrastructure.persistence.message_repository_impl import (
     MySQLMessageRepository,
 )
 from src.infrastructure.cache.llm_cache_impl import RedisLLMCache
 from src.infrastructure.memory.memory_manager_impl import DefaultMemoryManager
+from src.infrastructure.pipeline.meta_extractor import compute_message_meta
 from src.infrastructure.retrieval.hybrid_retrieval_impl import HybridRetriever
 from src.infrastructure.llm.factory_impl import LLMProviderFactoryAdapter
 from src.infrastructure.retrieval.rag_retriever import RAGRetriever
@@ -35,39 +40,26 @@ class SummaryGraph:
         message_repository: MessageRepositoryInterface | None = None,
         llm_cache: LLMCacheInterface | None = None,
     ):
-        # 核心模型工厂
-        self.model_factory: LLMModelFactoryInterface = (
-            model_factory or LLMProviderFactoryAdapter()
-        )
-        # 语义缓存（默认使用 Redis 实现）
-        self.llm_cache: LLMCacheInterface = llm_cache or RedisLLMCache()
-        # 记忆管理器
-        self.memory_manager: MemoryManagerInterface = (
-            memory_manager or DefaultMemoryManager()
-        )
+        self.model_factory = model_factory or LLMProviderFactoryAdapter()
+        self.llm_cache = llm_cache or RedisLLMCache()
+        self.memory_manager = memory_manager or DefaultMemoryManager()
+        self.message_repo = message_repository or MySQLMessageRepository()
 
-        # 检索配置
+        # 检索器初始化
         if use_hybrid_search is None:
             use_hybrid_search = config.retrieval_use_hybrid_search
 
-        # 初始化检索器（基于 RAG + HybridSearch）
         rag_retriever = RAGRetriever(
             self.memory_manager.vector_store_instance,
-            # 传入底层 LLM 提供方工厂（适配器内部持有具体实现实例）
-            getattr(self.model_factory, "_inner", None)
-            or LLMProviderFactoryAdapter()._inner,
+            getattr(self.model_factory, "provider", None),
             use_compression=config.retrieval_use_compression,
         )
-        self.retriever: RetrievalInterface = HybridRetriever(
+        self.retriever = HybridRetriever(
             rag_retriever=rag_retriever,
-            use_hybrid=use_hybrid_search,
-        )
+            use_hybrid=use_hybrid_search)
 
-        # 消息仓储：默认使用 MySQL 实现，允许按接口注入其他实现
-        self.message_repo: MessageRepositoryInterface = (
-            message_repository or MySQLMessageRepository()
-        )
         self.graph = self._build_graph()
+
 
     def _build_graph(self) -> CompiledStateGraph:
         """构建工作流"""
@@ -104,6 +96,10 @@ class SummaryGraph:
 
         return workflow.compile()
 
+
+    # ------------ 节点实现 ------------
+
+
     def load_messages(self, state: SummaryState) -> SummaryState:
         """加载消息"""
         state["raw_messages"] = self.message_repo.get_group_messages(
@@ -119,6 +115,7 @@ class SummaryGraph:
             state["raw_messages"]
         )
         return state
+
 
     def check_cache(self, state: SummaryState) -> SummaryState:
         """检查Redis缓存"""
@@ -142,6 +139,7 @@ class SummaryGraph:
         """缓存路由"""
         return "hit" if state.get("cache_hit") else "miss"
 
+
     def count_tokens(self, state: SummaryState) -> SummaryState:
         """计算 token"""
         state["token_count"] = self.model_factory.token_counter.count_messages_tokens(
@@ -149,12 +147,14 @@ class SummaryGraph:
         )
         return state
 
+
     def select_model(self, state: SummaryState) -> SummaryState:
         """选择模型"""
         state["selected_model"] = self.model_factory.select_model(
             state["token_count"]
         )
         return state
+
 
     async def retrieve_memory(self, state: SummaryState) -> SummaryState:
         """检索RAG记忆"""
@@ -172,57 +172,93 @@ class SummaryGraph:
         )
         return state
 
+
     async def generate_summary(self, state: SummaryState) -> SummaryState:
         """生成LLM结构化摘要"""
+
         llm = self.model_factory.create_model(
-            model_name=state["selected_model"],
-        )
+            model_name=state["selected_model"])
         chain = SummaryChain(llm)
 
+        # 1. AI 调用
         result = await chain.invoke(
             state["filtered_messages"],
-            state["memory_context"],
-        )
-        state["summary"] = self._format_summary(result)
+            state["memory_context"])
 
-        # 提取 metadata
-        state["metadata"] = {
+        # 2. 状态更新
+        state["summary_output"] = result
+        state["summary"] = SummaryFormatService.format(result)
+
+        # 3. 组装 Metadata
+        state["metadata"] = self._assemble_metadata(state, result)
+
+        return state
+
+
+    # ------------ 辅助方法 ------------
+
+
+    def _assemble_metadata(self, state: SummaryState, result: Any) -> Dict[str, Any]:
+        """将复杂的统计和分析逻辑封装"""
+        # 计算消息元数据
+        msg_meta = compute_message_meta(state["filtered_messages"])
+
+        # 构建统计实体
+        stats = ConversationStatistics(
+            message_count=msg_meta["msg_count"],
+            participant_count=msg_meta["user_count"],
+            total_characters=msg_meta["total_characters"],
+            time_span=msg_meta["time_span"],
+            duration=msg_meta["duration"],
+            activity=ActivityStatistics(hourly_distribution=msg_meta["hourly_distribution"]),
+        )
+
+        # 计算费用
+        cost = 0.0
+        try:
+            cost = self.model_factory.estimate_cost(
+                state["selected_model"],
+                state["token_count"]
+            )
+        except Exception as e:
+            print(f"警告: 费用预估失败，原因: {e}")
+
+        token_usage = TokenUsage(
+            prompt_tokens=state["token_count"],
+            total_tokens=state["token_count"],
+            estimated_cost=cost
+        )
+
+        analysis = ConversationAnalysisResult(
+            group_id=state["group_id"],
+            statistics=stats,
+            token_usage=token_usage,
+        )
+
+        return {
             "model": state["selected_model"],
             "token_count": state["token_count"],
             "concepts": getattr(result, "participants", []),
-            "events": self._extract_events_from_result(result),
+            "events": self._extract_events(result),
+            "analysis_result": analysis
         }
-        state["summary_output"] = result
-        return state
+
 
     @staticmethod
-    def _extract_events_from_result(result: Any) -> List[Dict]:
-        """解析话题事件"""
-        if not hasattr(result, "topics") or not result.topics:
-            return []
-
+    def _extract_events(result: Any) -> List[Dict]:
+        """解析 LLM 结果中的话题"""
+        topics = getattr(result, "topics", [])
         return [
             {
                 "event": t.topic,
                 "summary": t.summary,
                 "participants": getattr(t, "participants", []),
                 "timestamp": int(time.time()),
-            }
-            for t in result.topics
+            } for t in topics
         ]
 
-    @staticmethod
-    def _format_summary(res: Any) -> str:
-        """
-        文本格式化展示。
-
-        为保持兼容性，实际逻辑委托给领域层的 `SummaryFormatService`，
-        其实现与原始版本保持一致。
-        """
-        return SummaryFormatService.format(res)
 
     def save_cache(self, state: SummaryState) -> SummaryState:
-        """保存到 Redis 语义缓存"""
         if not state.get("cache_hit"):
             self.llm_cache.put(
                 group_id=state["group_id"],
@@ -233,8 +269,8 @@ class SummaryGraph:
             )
         return state
 
+
     def save_memory(self, state: SummaryState) -> SummaryState:
-        """存入长短期记忆系统（Chroma + MySQL）"""
         meta = state.get("metadata", {})
         self.memory_manager.add_memory(
             group_id=state["group_id"],
@@ -245,6 +281,7 @@ class SummaryGraph:
             metadata={"hours": state["hours"], **meta},
         )
         return state
+
 
     async def invoke(self, group_id: int, hours: int) -> str:
         """执行工作流"""

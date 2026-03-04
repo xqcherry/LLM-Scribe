@@ -1,9 +1,3 @@
-"""
-摘要相关领域实体。
-
-在领域层直接定义摘要结构，避免依赖 core 层实现。
-"""
-
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -29,13 +23,11 @@ class SummaryOutput(BaseModel):
 
 
 class Topic(TopicSummary):
-    """话题聚合视图（语义别名）。"""
-
+    """话题聚合视图（"""
     pass
 
 
 class Summary(SummaryOutput):
-    """群聊摘要的聚合根实体（语义别名）。"""
-
+    """群聊摘要的聚合根实体。"""
     pass
 

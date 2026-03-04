@@ -1,9 +1,3 @@
-"""
-记忆系统领域接口。
-
-通过该抽象，可以将具体的 MemoryManager 实现放在基础设施层。
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

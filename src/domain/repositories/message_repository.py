@@ -1,9 +1,3 @@
-"""
-消息仓储接口。
-
-用于从不同存储实现中获取群聊消息，领域层仅依赖该抽象。
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

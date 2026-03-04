@@ -2,7 +2,7 @@
 群聊摘要应用服务。
 
 目前作为对 `SummaryGraph` 的薄封装，不改变任何业务行为，
-仅提供一个语义清晰的用例入口，便于后续扩展到多平台或 UI。
+仅提供一个语义清晰的用例入口
 """
 
 from src.application.graph.summary_graph import SummaryGraph

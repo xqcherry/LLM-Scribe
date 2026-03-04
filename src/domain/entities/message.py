@@ -1,9 +1,3 @@
-"""
-消息相关领域实体。
-
-在领域层直接定义消息模型，避免依赖 core 层实现。
-"""
-
 from pydantic import BaseModel
 
 

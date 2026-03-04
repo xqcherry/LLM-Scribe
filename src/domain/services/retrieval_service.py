@@ -1,9 +1,3 @@
-"""
-检索系统领域接口。
-
-用于从长期记忆 / 向量库中检索与当前摘要相关的上下文。
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

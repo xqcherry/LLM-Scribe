@@ -1,10 +1,3 @@
-"""
-通用 LLM 提供方模型工厂实现。
-
-默认使用 Moonshot Chat 模型，但通过命名与接口抽象，后续可以替换为任意
-兼容的开源或云端大模型提供方。
-"""
-
 from typing import Optional
 
 from langchain_community.chat_models.moonshot import MoonshotChat
@@ -75,8 +68,12 @@ class LLMProviderFactory:
             max_tokens=max_tokens,
         )
 
-    def estimate_cost(self, model_name: str, tokens: int) -> float:
+    def estimate_cost(
+            self,
+            model_name: str,
+            token_count: int
+    ) -> float:
         """估算成本。"""
         cost_per_1k = self.MODELS[model_name]["cost_per_1k"]
-        return (tokens / 1000) * cost_per_1k
+        return (token_count / 1000) * cost_per_1k
 

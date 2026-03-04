@@ -1,10 +1,3 @@
-"""
-通用 LLM 提供方工厂适配器。
-
-将 `LLMProviderFactory` 适配为领域层的 `LLMModelFactoryInterface`，
-默认实现基于 Moonshot Chat，可替换为其他提供方。
-"""
-
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -14,14 +7,16 @@ from src.infrastructure.llm.model_factory import LLMProviderFactory
 
 
 class LLMProviderFactoryAdapter(LLMModelFactoryInterface):
-    """将 LLMProviderFactory 适配为领域层可依赖的工厂接口。"""
+    """将 LLMProviderFactory 适配为领域层可依赖的工厂接口"""
 
     def __init__(self, inner: LLMProviderFactory | None = None) -> None:
         self._inner = inner or LLMProviderFactory()
 
+
     @property
     def token_counter(self) -> Any:
         return self._inner.token_counter
+
 
     def select_model(
         self,
@@ -34,6 +29,7 @@ class LLMProviderFactoryAdapter(LLMModelFactoryInterface):
             max_output_tokens=max_output_tokens,
             safety_margin=safety_margin,
         )
+
 
     def create_model(
         self,
@@ -49,3 +45,13 @@ class LLMProviderFactoryAdapter(LLMModelFactoryInterface):
             prompt_tokens=prompt_tokens,
         )
 
+    def estimate_cost(
+            self,
+            model_name: str,
+            token_count: int
+    ) -> float:
+        """计费预估"""
+        try:
+            return self._inner.estimate_cost(model_name, token_count)
+        except (AttributeError, Exception):
+            return 0.0

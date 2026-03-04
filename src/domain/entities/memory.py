@@ -1,7 +1,3 @@
-"""
-记忆状态相关实体。
-"""
-
 from typing import List, Optional
 
 from pydantic import BaseModel, Field

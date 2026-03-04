@@ -1,9 +1,3 @@
-"""
-LLM 摘要缓存领域服务接口。
-
-通过该抽象，可以将缓存实现（Redis / 内存等）放在基础设施层。
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
