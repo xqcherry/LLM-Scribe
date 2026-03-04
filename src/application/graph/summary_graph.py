@@ -41,22 +41,28 @@ class SummaryGraph:
         llm_cache: LLMCacheInterface | None = None,
     ):
         self.model_factory = model_factory or LLMProviderFactoryAdapter()
-        self.llm_cache = llm_cache or RedisLLMCache()
-        self.memory_manager = memory_manager or DefaultMemoryManager()
         self.message_repo = message_repository or MySQLMessageRepository()
+        # [mock测试] self.llm_cache = llm_cache or RedisLLMCache()
+        # [mock测试] self.memory_manager = memory_manager or DefaultMemoryManager()
+        self.llm_cache = llm_cache
+        self.memory_manager = memory_manager
 
         # 检索器初始化
         if use_hybrid_search is None:
             use_hybrid_search = config.retrieval_use_hybrid_search
 
-        rag_retriever = RAGRetriever(
-            self.memory_manager.vector_store_instance,
-            getattr(self.model_factory, "provider", None),
-            use_compression=config.retrieval_use_compression,
-        )
-        self.retriever = HybridRetriever(
-            rag_retriever=rag_retriever,
-            use_hybrid=use_hybrid_search)
+        # [mock测试] 只有当 memory_manager 存在时才初始化检索器，增添if-else
+        if self.memory_manager:
+            rag_retriever = RAGRetriever(
+                self.memory_manager.vector_store_instance,
+                getattr(self.model_factory, "provider", None),
+                use_compression=config.retrieval_use_compression,
+            )
+            self.retriever = HybridRetriever(
+                rag_retriever=rag_retriever,
+                use_hybrid=use_hybrid_search)
+        else:
+            self.retriever = None
 
         self.graph = self._build_graph()
 
@@ -119,6 +125,13 @@ class SummaryGraph:
 
     def check_cache(self, state: SummaryState) -> SummaryState:
         """检查Redis缓存"""
+
+        # [mock]
+        if not self.llm_cache:
+            state["cache_hit"] = False
+            return state
+        # [mock]
+
         cached = self.llm_cache.get(
             group_id=state["group_id"],
             messages=state["filtered_messages"],
@@ -158,6 +171,13 @@ class SummaryGraph:
 
     async def retrieve_memory(self, state: SummaryState) -> SummaryState:
         """检索RAG记忆"""
+
+        # [mock]
+        if not self.memory_manager or not self.retriever:
+            state["memory_context"] = ""
+            return state
+        # [mock]
+
         query = f"群组 {state['group_id']} 历史讨论重点"
 
         # 通过检索接口获取上下文
@@ -259,7 +279,17 @@ class SummaryGraph:
 
 
     def save_cache(self, state: SummaryState) -> SummaryState:
-        if not state.get("cache_hit"):
+        # if not state.get("cache_hit"):
+        #     self.llm_cache.put(
+        #         group_id=state["group_id"],
+        #         hours=state["hours"],
+        #         messages=state["filtered_messages"],
+        #         summary=state["summary"],
+        #         metadata=state.get("metadata", {}),
+        #     )
+        # return state
+        """保存缓存：静默跳过"""
+        if self.llm_cache and not state.get("cache_hit"):
             self.llm_cache.put(
                 group_id=state["group_id"],
                 hours=state["hours"],
@@ -271,15 +301,27 @@ class SummaryGraph:
 
 
     def save_memory(self, state: SummaryState) -> SummaryState:
-        meta = state.get("metadata", {})
-        self.memory_manager.add_memory(
-            group_id=state["group_id"],
-            messages=state["filtered_messages"],
-            summary=state["summary"],
-            concepts=meta.get("concepts", []),
-            events=meta.get("events", []),
-            metadata={"hours": state["hours"], **meta},
-        )
+        # meta = state.get("metadata", {})
+        # self.memory_manager.add_memory(
+        #     group_id=state["group_id"],
+        #     messages=state["filtered_messages"],
+        #     summary=state["summary"],
+        #     concepts=meta.get("concepts", []),
+        #     events=meta.get("events", []),
+        #     metadata={"hours": state["hours"], **meta},
+        # )
+        # return state
+        """保存记忆：静默跳过"""
+        if self.memory_manager:
+            meta = state.get("metadata", {})
+            self.memory_manager.add_memory(
+                group_id=state["group_id"],
+                messages=state["filtered_messages"],
+                summary=state["summary"],
+                concepts=meta.get("concepts", []),
+                events=meta.get("events", []),
+                metadata={"hours": state["hours"], **meta},
+            )
         return state
 
 
