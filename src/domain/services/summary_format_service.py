@@ -6,19 +6,21 @@ class SummaryFormatService:
 
     @staticmethod
     def format(result: Any) -> str:
-        # 逻辑与 `SummaryGraph._format_summary` 保持完全一致
-        lines: List[str] = [
-            "📊 【群聊摘要】",
-            f"🔍 核心摘要：\n{result.overall_summary}\n",
-        ]
 
-        if getattr(result, "topics", None):
-            lines.append("💡 话题回顾：")
-            lines.extend([f"• {t.topic}" for t in result.topics[:5]])
+        lines: List[str] = ["📊 【今日群聊话题回顾】", ""]
+        topics = getattr(result, "topics", [])
 
-        if getattr(result, "key_quotes", None):
-            if result.key_quotes:
-                lines.append(f"\n💬 精彩瞬间：\n“{result.key_quotes[0]}”")
+        if not topics:
+            return "📊 今日群聊内容平淡，未提取到显著话题"
 
-        return "\n".join(lines)
+        for i, t in enumerate(topics[:8], 1):
+            topic_title = getattr(t, "topic", f"话题 {i}")
+            topic_summary = getattr(t, "summary", "（无详细内容）")
+
+            # 格式：数字编号 + 加粗标题
+            lines.append(f"{i}. #**{topic_title}**#")
+            lines.append(f"   └ {topic_summary}")
+            lines.append("")
+
+        return "\n".join(lines).strip()
 
