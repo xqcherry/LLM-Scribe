@@ -285,7 +285,7 @@ class SummaryGraph:
 
     @staticmethod
     def _extract_events(result: Any) -> List[Dict]:
-        """解析 LLM 结果中的话题（适配新的TopicSummary结构）"""
+        """解析 LLM 结果中的话题"""
         topics = getattr(result, "topics", [])
         return [
             {
