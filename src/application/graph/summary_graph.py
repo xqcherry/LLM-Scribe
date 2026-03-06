@@ -116,9 +116,19 @@ class SummaryGraph:
 
     def filter_messages(self, state: SummaryState) -> SummaryState:
         """过滤消息"""
-        state["filtered_messages"] = self.filter_service.get_cleaned_messages(
-            state["raw_messages"]
-        )
+
+        # 1. 过滤raw
+        raw_msgs = state["raw_messages"]
+        state["filtered_messages"] = self.filter_service.get_cleaned_messages(raw_msgs)
+
+        # 2. 提取映射表
+        id2name = {}
+        for msg in raw_msgs:
+            uid = str(msg.get("user_id", ""))
+            if uid:
+                id2name[uid] = str(msg.get("sender_nickname") or uid)
+        state["nickname_map"] = id2name
+
         return state
 
 
@@ -351,6 +361,7 @@ class SummaryGraph:
             "hours": hours,
             "raw_messages": [],
             "filtered_messages": [],
+            "nickname_map": {},
             "token_count": 0,
             "selected_model": "",
             "memory_context": "",

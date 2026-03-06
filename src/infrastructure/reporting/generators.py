@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import html
 import os, re
 
 import aiohttp
@@ -51,10 +52,12 @@ class ReportGenerator:
             render_data = data_adapter(summary_result, group_id)
 
             # 2. 处理话题详情
+            nickname_map = summary_result.get("nickname_map", {})
             render_payload = await self._prepare_render_payload(
                 render_data,
                 avatar_getter,
-                nickname_getter
+                nickname_getter,
+                nickname_map = nickname_map
             )
 
             # 3. 使用 HTMLTemplates 进行异步渲染
@@ -83,6 +86,7 @@ class ReportGenerator:
         render_data: Dict[str, Any],
         avatar_getter: Optional[Callable],
         nickname_getter: Optional[Callable],
+        nickname_map: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """增强数据：处理话题列表、胶囊映射和图表数据"""
         # 处理话题：遍历话题详情，将 [ID] 替换为 HTML 胶囊
@@ -93,7 +97,8 @@ class ReportGenerator:
             topic["detail_html"] = await self._inject_capsules(
                 raw_detail,
                 avatar_getter,
-                nickname_getter
+                nickname_getter,
+                nickname_map = nickname_map
             )
 
         # 注入环境变量和元数据
@@ -111,7 +116,8 @@ class ReportGenerator:
             self,
             text: str,
             avatar_getter: Callable,
-            nickname_getter: Callable
+            nickname_getter: Callable,
+            nickname_map: Optional[Dict[str, str]] = None,
     ) -> str:
         """识别 [ID] 并转换为 HTML 胶囊"""
 
@@ -124,7 +130,15 @@ class ReportGenerator:
         user_ids = list(set(m.group(1) for m in matches))
 
         # 并发获取头像昵称
-        tasks = [self._get_user_card(uid, avatar_getter, nickname_getter) for uid in user_ids]
+        tasks = [
+            self._get_user_card(
+                uid,
+                avatar_getter,
+                nickname_getter,
+                nickname_map=nickname_map
+            )
+            for uid in user_ids
+        ]
         results = await asyncio.gather(*tasks)
         user_info_map = dict(zip(user_ids, results))
 
@@ -150,30 +164,42 @@ class ReportGenerator:
             self,
             user_id: str,
             a_getter: Callable,
-            n_getter: Callable
+            n_getter: Callable,
+            nickname_map: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str]:
-        """获取用户头像昵称"""
+        """获取用户头像昵称：统一转义与短路优化版"""
 
-        # 昵称
-        nickname = str(user_id)
-        if n_getter:
+        user_id_str = str(user_id)
+        nickname = user_id_str  # 初始兜底方案
+
+        # 记录是否已经从可靠来源获取了昵称，用于短路判断
+        found_reliable_name = False
+
+        # 1. 尝试从 nickname_map 获取
+        if nickname_map:
+            mapped = nickname_map.get(user_id_str)
+            if mapped and not self._is_placeholder_display_name(str(mapped), user_id_str):
+                nickname = str(mapped)
+                found_reliable_name = True
+
+        # 2. 如果 map 没中，再尝试 n_getter
+        if not found_reliable_name and n_getter:
             try:
-                res = await asyncio.wait_for(n_getter(user_id), timeout=3.0)
-                if res and not self._is_placeholder_display_name(res, user_id):
+                res = await asyncio.wait_for(n_getter(user_id_str), timeout=3.0)
+                if res and not self._is_placeholder_display_name(str(res), user_id_str):
                     nickname = str(res)
             except asyncio.TimeoutError:
-                logger.warning(f"获取昵称超时 [User: {user_id}]")
+                logger.warning(f"获取昵称超时 [User: {user_id_str}]")
             except Exception as e:
-                logger.debug(f"获取昵称失败 [User: {user_id}], Error: {type(e).__name__}: {e}")
+                logger.debug(f"获取昵称失败 [User: {user_id_str}], Error: {type(e).__name__}: {e}")
 
-        # 头像
-        avatar_b64 = await self._get_user_avatar_base64(user_id, a_getter)
+        # 3. 统一获取头像
+        avatar_b64 = await self._get_user_avatar_base64(user_id_str, a_getter)
 
-        result = {
-            "nickname": nickname,
+        return {
+            "nickname": html.escape(nickname),
             "avatar": avatar_b64
         }
-        return result
 
 
     async def _get_user_avatar_base64(self, user_id: str, getter: Callable) -> str:

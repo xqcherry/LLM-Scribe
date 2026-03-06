@@ -15,5 +15,8 @@ class GroupSummaryApplicationService:
             "topics": result.get("topics", []),
             "analysis": result.get("metadata", {}).get("analysis_result"),
             "metadata": result.get("metadata", {}),
+            "nickname_map": result.get("nickname_map", {}),
+            "group_id": group_id,
+            "hours": hours,
         }
 

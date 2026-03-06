@@ -8,6 +8,7 @@ class SummaryState(TypedDict):
     hours: int
     raw_messages: List[Dict]
     filtered_messages: List[Dict]
+    nickname_map: Dict[str, str]
     token_count: int
     selected_model: str
     memory_context: str

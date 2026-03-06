@@ -170,29 +170,33 @@
             color: #1e293b;
         }
 
-        .participant-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+        /* --- 用户胶囊样式 --- */
+        .user-capsule {
+            display: inline-flex;
             align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .participant-label {
-            font-size: 11px;
-            color: #94a3b8;
-            font-weight: 800;
-        }
-
-        .uid-tag {
-            font-size: 11px;
-            background: #f8fafc;
-            color: #6366f1;
-            padding: 2px 8px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            font-family: monospace;
+            padding: 0px 6px;
+            margin: 0 2px;
+            vertical-align: baseline;
+            height: 22px;
+        }
+
+        .capsule-avatar {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 5px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .capsule-name {
+            font-size: 12px;
             font-weight: 700;
-            border: 1px solid #eef2ff;
+            color: #6366f1;
+            white-space: nowrap;
         }
 
         .topic-body {
@@ -291,17 +295,8 @@
     <div class="topic-card">
         <div class="topic-title">{{ topic.topic }}</div>
 
-        {% if topic.participants %}
-        <div class="participant-container">
-            <span class="participant-label">核心讨论者:</span>
-            {% for uid in topic.participants %}
-            <span class="uid-tag">{{ uid }}</span>
-            {% endfor %}
-        </div>
-        {% endif %}
-
         <p class="topic-body">
-            {{ topic.detail }}
+            {{ topic.detail_html | safe if topic.detail_html else topic.detail }}
         </p>
     </div>
     {% endfor %}
