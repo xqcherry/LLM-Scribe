@@ -25,8 +25,7 @@ def data_adapter(
         adapted_topics.append({
             "topic": t.get("event", "未命名话题"),
             "detail": t.get("summary", ""),
-            "contributors": t.get("participants", []),
-            "contributor_ids": t.get("participants", []),
+            "contributors": t.get("contributors", []),
         })
 
     # 统计适配

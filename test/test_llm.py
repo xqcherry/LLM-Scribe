@@ -1,5 +1,6 @@
 import asyncio
 import json
+from loguru import logger
 import traceback
 from src.application.graph.summary_graph import SummaryGraph
 from src.infrastructure.persistence.message_repository_impl import MySQLMessageRepository

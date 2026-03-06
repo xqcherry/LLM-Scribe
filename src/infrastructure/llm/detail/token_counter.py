@@ -39,5 +39,4 @@ class TokenCounter:
             # RAG 检索到的背景知识也计入总数
             total += self.count_tokens(memory_context)
 
-        # 预留一些 token 用于 LLM 的固定响应格式
-        return total + 50
+        return total
