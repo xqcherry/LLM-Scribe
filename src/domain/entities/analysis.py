@@ -14,7 +14,7 @@ class TokenUsage(BaseModel):
 
 
 class ActivityStatistics(BaseModel):
-    """活动可视化相关统计。"""
+    """活动可视化相关统计"""
 
     # 0~23 点消息分布
     hourly_distribution: List[int] = Field(
@@ -24,7 +24,7 @@ class ActivityStatistics(BaseModel):
 
 
 class ConversationStatistics(BaseModel):
-    """会话基础统计。"""
+    """会话基础统计"""
 
     message_count: int = 0
     participant_count: int = 0
@@ -35,7 +35,7 @@ class ConversationStatistics(BaseModel):
 
 
 class ConversationAnalysisResult(BaseModel):
-    """会话分析结果聚合实体。"""
+    """会话分析结果聚合实体"""
 
     group_id: Union[int, str] = 0
     trace_id: str = ""

@@ -1,71 +1,48 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
+from src.domain.entities.summary_result import SummaryResult
 
 
-def data_adapter(
-        summary_result: Dict[str,Any],
-        group_id: str,
-) -> Dict[str,Any]:
-    """数据适配器：将 LLM-Scribe 的数据结构转换为渲染器格式
-    Args:
-        summary_result: {
-            "summary_text": str,
-            "topics": List[TopicSummary],
-            "analysis": ConversationAnalysisResult,
-            "metadata": Dict
-        }
-        group_id : 目标群组的唯一识别 ID
-    """
-    metadata = summary_result.get("metadata", {})
-    analysis = summary_result.get("analysis")
+def data_adapter(summary_result: SummaryResult) -> Dict[str, Any]:
+    """将统一的 SummaryResult 转换为渲染器格式。"""
 
-    # 适配话题格式
-    raw_topics = summary_result.get("topics", [])
-    adapted_topics = []
-    for t in raw_topics:
-        adapted_topics.append({
-            "topic": t.get("event", "未命名话题"),
-            "detail": t.get("summary", ""),
-            "contributors": t.get("contributors", []),
-        })
+    stats = summary_result.analysis.statistics
+    usage = summary_result.analysis.token_usage
 
-    # 统计适配
-    stats = getattr(analysis, "statistics", None)
-    usage = getattr(analysis, "token_usage", None)
-
-    # 24h分布适配
-    hourly_activity = [0] * 24
+    hourly_activity = stats.activity.hourly_distribution or [0] * 24
     most_active_period = "未知"
+    if any(hourly_activity):
+        max_hour = hourly_activity.index(max(hourly_activity))
+        next_hour = (max_hour + 1) % 24
+        most_active_period = f"{max_hour:02d}:00 - {next_hour:02d}:00"
 
-    if stats and stats.activity:
-        dist = stats.activity.hourly_distribution
-        if isinstance(dist, list):
-            hourly_activity = dist
-            if any(hourly_activity):
-                max_hour = hourly_activity.index(max(hourly_activity))
-                next_hour = (max_hour + 1) % 24
-                most_active_period = f"{max_hour:02d}:00 - {next_hour:02d}:00"
+    adapted_topics = [
+        {
+            "topic": topic.topic,
+            "detail": topic.detail,
+            "contributors": topic.contributors,
+        }
+        for topic in summary_result.topics
+    ]
 
-    # 构建渲染数据
-    render_data = {
+    return {
         "header": {
-            "group_id": str(group_id),
+            "group_id": str(summary_result.context.group_id),
             "title": "群聊简报",
-            "time_range": getattr(stats, "time_span", "24小时内")
+            "time_range": stats.time_span or f"最近 {summary_result.context.hours} 小时",
         },
         "statistics": {
-            "message_count": getattr(stats, "message_count", 0),
-            "participant_count": getattr(stats, "participant_count", 0),
+            "message_count": stats.message_count,
+            "participant_count": stats.participant_count,
             "most_active_period": most_active_period,
             "activity_visualization": {
-                "hourly_activity": hourly_activity
-            }
+                "hourly_activity": hourly_activity,
+            },
         },
         "topics": adapted_topics,
         "metadata": {
-            "model": metadata.get("model", "unknown"),
-            "total_tokens": getattr(usage, "total_tokens", 0),
-            "cost": getattr(usage, "estimated_cost", 0.0)
-        }
+            "model": "unknown",
+            "total_tokens": usage.total_tokens,
+            "cost": usage.estimated_cost,
+        },
     }
-
-    return render_data

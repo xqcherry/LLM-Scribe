@@ -1,5 +1,4 @@
-import time
-from typing import cast, Any, List, Dict
+from typing import cast, Any, Dict
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 
@@ -12,7 +11,7 @@ from src.domain.services.msg_filter_service import MessageFilter
 from src.domain.services.summary_format_service import SummaryFormatService
 from src.domain.services.memory_service import MemoryManagerInterface
 from src.domain.services.llm_service import LLMModelFactoryInterface
-from src.domain.entities.analysis_result import (
+from src.domain.entities.analysis import (
     ConversationAnalysisResult,
     ConversationStatistics,
     ActivityStatistics,
@@ -151,6 +150,9 @@ class SummaryGraph:
             state["cache_hit"] = True
             state["cache_similarity"] = cached.get("similarity_score", 1.0)
             state["metadata"] = cached.get("metadata", {})
+            state["analysis"] = state.get("analysis") or ConversationAnalysisResult(
+                group_id=state["group_id"]
+            )
         else:
             state["cache_hit"] = False
 
@@ -220,7 +222,8 @@ class SummaryGraph:
             for t in result.topics
         ]
         state["summary"] = SummaryFormatService.format(result)
-        state["metadata"] = self._assemble_metadata(state, result)
+        state["analysis"] = self._build_analysis(state)
+        state["metadata"] = self._build_technical_metadata(state)
 
         return state
 
@@ -228,12 +231,10 @@ class SummaryGraph:
     # ------------ 辅助方法 ------------
 
 
-    def _assemble_metadata(self, state: SummaryState, result: Any) -> Dict[str, Any]:
-        """将复杂的统计和分析逻辑封装"""
-        # 计算消息元数据
+    def _build_analysis(self, state: SummaryState) -> ConversationAnalysisResult:
+        """构建结构化分析结果（业务字段）。"""
         msg_meta = compute_message_meta(state["filtered_messages"])
 
-        # 构建统计实体
         stats = ConversationStatistics(
             message_count=msg_meta["msg_count"],
             participant_count=msg_meta["user_count"],
@@ -243,68 +244,36 @@ class SummaryGraph:
             activity=ActivityStatistics(hourly_distribution=msg_meta["hourly_distribution"]),
         )
 
-        # 计算费用
-        cost = 0.0
+        estimated_cost = 0.0
         try:
-            cost = self.model_factory.estimate_cost(
+            estimated_cost = self.model_factory.estimate_cost(
                 state["selected_model"],
-                state["token_count"]
+                state["token_count"],
             )
-        except Exception as e:
-            print(f"警告: 费用预估失败，原因: {e}")
+        except Exception:
+            estimated_cost = 0.0
 
         token_usage = TokenUsage(
             prompt_tokens=state["token_count"],
             total_tokens=state["token_count"],
-            estimated_cost=cost
+            estimated_cost=estimated_cost,
         )
 
-        analysis = ConversationAnalysisResult(
+        return ConversationAnalysisResult(
             group_id=state["group_id"],
             statistics=stats,
             token_usage=token_usage,
         )
 
-        # 处理话题数据
-        topic_events = []
-        if result and hasattr(result, "topics") and result.topics:
-            topic_events = [
-                {
-                    "event": t.topic,
-                    "summary": t.detail,
-                    "participants": t.contributors,
-                    "timestamp": int(time.time()),
-                }
-                for t in result.topics
-            ]
 
-        # 提取所有参与者（从话题中聚合）
-        all_participants = set()
-        if result and hasattr(result, "topics") and result.topics:
-            for topic in result.topics:
-                all_participants.update(topic.contributors)
-
+    def _build_technical_metadata(self, state: SummaryState) -> Dict[str, Any]:
+        """构建技术侧元数据（非业务核心字段）。"""
         return {
             "model": state["selected_model"],
             "token_count": state["token_count"],
-            "concepts": list(all_participants),
-            "topics": topic_events,
-            "analysis_result": analysis
+            "cache_hit": state.get("cache_hit", False),
+            "cache_similarity": state.get("cache_similarity", 0.0),
         }
-
-
-    @staticmethod
-    def _extract_events(result: Any) -> List[Dict]:
-        """解析 LLM 结果中的话题"""
-        topics = getattr(result, "topics", [])
-        return [
-            {
-                "event": t.topic,
-                "summary": t.detail,
-                "participants": getattr(t, "contributors", []),
-                "timestamp": int(time.time()),
-            } for t in topics
-        ]
 
 
     def save_cache(self, state: SummaryState) -> SummaryState:
@@ -347,8 +316,8 @@ class SummaryGraph:
                 group_id=state["group_id"],
                 messages=state["filtered_messages"],
                 summary=state["summary"],
-                concepts=meta.get("concepts", []),
-                events=meta.get("events", []),
+                concepts=[],
+                events=[],
                 metadata={"hours": state["hours"], **meta},
             )
         return state
@@ -367,6 +336,7 @@ class SummaryGraph:
             "memory_context": "",
             "summary": "",
             "topics": [],
+            "analysis": ConversationAnalysisResult(group_id=group_id),
             "metadata": {},
             "refresh_mode": "high",
             "cache_hit": False,
@@ -376,6 +346,6 @@ class SummaryGraph:
         try:
             result = await self.graph.ainvoke(cast(Any, initial_state))
             return result
-        except Exception as e:
-            raise e
+        except Exception:
+            raise
 

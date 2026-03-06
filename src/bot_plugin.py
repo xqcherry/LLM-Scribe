@@ -52,7 +52,8 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
 
     try:
         # 通过应用服务层调用摘要用例（内部仍然使用 SummaryGraph）
-        summary_text = await _summary_app_service.summarize_group(group_id, hours)
+        summary_result = await _summary_app_service.summarize_group(group_id, hours)
+        summary_text = summary_result.summary_text
 
         if not summary_text or not isinstance(summary_text, str):
             await smy_cmd.send("未生成有效摘要内容。")

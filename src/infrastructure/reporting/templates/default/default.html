@@ -170,41 +170,51 @@
             color: #1e293b;
         }
 
-        /* --- 用户胶囊样式 --- */
+        /* --- 用户胶囊样式重构 --- */
         .user-capsule {
             display: inline-flex;
             align-items: center;
-            background: #f1f5f9;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 0px 6px;
-            margin: 0 2px;
-            vertical-align: baseline;
-            height: 22px;
+            border-radius: 99px; /* 全圆角药丸状 */
+            padding: 1px 8px 1px 4px;
+            margin: 0 4px;
+            vertical-align: middle; /* 核心：让胶囊与文字中轴线对齐 */
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            height: 24px; /* 固定高度确保整齐 */
+            line-height: normal;
         }
 
         .capsule-avatar {
-            width: 14px;
-            height: 14px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            margin-right: 5px;
+            margin-right: 6px;
             object-fit: cover;
             display: block;
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .capsule-name {
             font-size: 12px;
-            font-weight: 700;
-            color: #6366f1;
+            font-weight: 600;
+            color: #6366f1; /* 保持你的主题紫色 */
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
         }
 
+        /* --- 话题正文排版优化 --- */
         .topic-body {
             font-size: 15.5px;
-            color: #475569;
-            line-height: 1.8;
+            color: #334155;
+            /* 关键：行高增加到 2.2 左右，防止胶囊上下贴死文字 */
+            line-height: 2.2;
             margin: 0;
             text-align: justify;
+            word-break: break-all;
         }
 
         footer {
@@ -294,6 +304,13 @@
     {% for topic in topics %}
     <div class="topic-card">
         <div class="topic-title">{{ topic.topic }}</div>
+
+        {% if topic.contributors_html %}
+        <div style="display:flex; align-items:center; gap:8px; margin: 4px 0 12px 0; flex-wrap: wrap;">
+            <span style="font-size:12px; color:#64748b; font-weight:700;">参与者</span>
+            {{ topic.contributors_html | safe }}
+        </div>
+        {% endif %}
 
         <p class="topic-body">
             {{ topic.detail_html | safe if topic.detail_html else topic.detail }}

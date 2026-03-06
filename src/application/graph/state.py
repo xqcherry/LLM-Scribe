@@ -14,6 +14,7 @@ class SummaryState(TypedDict):
     memory_context: str
     summary: str
     topics: List[Any]
+    analysis: Any
     metadata: Dict
     refresh_mode: Literal["high", "delta", "low"]
     cache_hit: bool

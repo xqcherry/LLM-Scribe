@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 from datetime import datetime
 
+from src.domain.entities.summary_result import SummaryResult
 from src.infrastructure.reporting.data_adapter import data_adapter
 from src.infrastructure.reporting.html_render import HTMLRenderer
 from src.infrastructure.reporting.templates import HTMLTemplates
@@ -36,8 +37,7 @@ class ReportGenerator:
 
     async def generate_image_report(
             self,
-            summary_result: Dict[str, Any],
-            group_id: str,
+            summary_result: SummaryResult,
             avatar_getter: Optional[Callable] = None,
             nickname_getter: Optional[Callable] = None,
     ) -> Tuple[Optional[bytes], str]:
@@ -49,10 +49,10 @@ class ReportGenerator:
 
         try:
             # 1. 调用数据适配器
-            render_data = data_adapter(summary_result, group_id)
+            render_data = data_adapter(summary_result)
 
             # 2. 处理话题详情
-            nickname_map = summary_result.get("nickname_map", {})
+            nickname_map = summary_result.nickname_map
             render_payload = await self._prepare_render_payload(
                 render_data,
                 avatar_getter,
@@ -80,34 +80,52 @@ class ReportGenerator:
             logger.error(f"生成图片报告链路失败: {e}", exc_info=True)
             return None, ""
 
-
     async def _prepare_render_payload(
-        self,
-        render_data: Dict[str, Any],
-        avatar_getter: Optional[Callable],
-        nickname_getter: Optional[Callable],
-        nickname_map: Optional[Dict[str, str]] = None,
+            self,
+            render_data: Dict[str, Any],
+            avatar_getter: Optional[Callable],
+            nickname_getter: Optional[Callable],
+            nickname_map: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
-        """增强数据：处理话题列表、胶囊映射和图表数据"""
-        # 处理话题：遍历话题详情，将 [ID] 替换为 HTML 胶囊
+        """增强数据：并发处理胶囊映射"""
+
+        # 1. 提取话题
         topics = render_data.get("topics", [])
-        for topic in topics:
+        if not topics:
+            logger.warning("⚠️ _prepare_render_payload: 接收到的 topics 为空")
+            return render_data
+
+        # 2. 【核心优化】并发处理所有话题的胶囊注入
+        async def process_single_topic(topic):
             raw_detail = topic.get("detail", "")
-            # 注入胶囊
             topic["detail_html"] = await self._inject_capsules(
                 raw_detail,
                 avatar_getter,
                 nickname_getter,
-                nickname_map = nickname_map
+                nickname_map=nickname_map
             )
 
-        # 注入环境变量和元数据
+            contributors = topic.get("contributors", []) or []
+            topic["contributors_html"] = await self._render_contributors_capsules(
+                contributors,
+                avatar_getter,
+                nickname_getter,
+                nickname_map=nickname_map,
+            )
+            return topic
+
+        # 使用 asyncio.gather 并发执行
+        await asyncio.gather(*[process_single_topic(t) for t in topics])
+
+        # 3. 注入环境变量和元数据
         payload = {
             **render_data,
             "render_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "base_path": f"file://{self.html_templates.template_dir}/",  # 用于模板内引用本地资源
+            "base_path": f"file://{self.html_templates.template_dir}/",
             "template_name": self.template_name
         }
+
+        logger.info(f"✅ Payload 准备就绪，包含 {len(payload.get('topics', []))} 个已注入胶囊的话题")
 
         return payload
 
@@ -158,6 +176,49 @@ class ReportGenerator:
             result_html = result_html[:start] + capsule_html + result_html[end:]
 
         return result_html
+
+
+    async def _render_contributors_capsules(
+            self,
+            contributors: list,
+            avatar_getter: Optional[Callable],
+            nickname_getter: Optional[Callable],
+            nickname_map: Optional[Dict[str, str]] = None,
+    ) -> str:
+        """将参与者列表渲染为胶囊 HTML"""
+        if not contributors:
+            return ""
+
+        user_ids = []
+        for uid in contributors:
+            uid_str = str(uid).strip()
+            if uid_str and uid_str not in user_ids:
+                user_ids.append(uid_str)
+
+        if not user_ids:
+            return ""
+
+        tasks = [
+            self._get_user_card(
+                uid,
+                avatar_getter,
+                nickname_getter,
+                nickname_map=nickname_map,
+            )
+            for uid in user_ids
+        ]
+        infos = await asyncio.gather(*tasks)
+
+        capsules = []
+        for info in infos:
+            capsules.append(
+                f'<span class="user-capsule">'
+                f'<img src="{info["avatar"]}" class="capsule-avatar">'
+                f'<span class="capsule-name">{info["nickname"]}</span>'
+                f'</span>'
+            )
+
+        return "".join(capsules)
 
 
     async def _get_user_card(
