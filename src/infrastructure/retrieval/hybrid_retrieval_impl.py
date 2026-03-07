@@ -1,10 +1,3 @@
-"""
-混合检索基础设施实现。
-
-通过组合现有的 `RAGRetriever` 与 `HybridSearch`，实现
-领域层定义的 `RetrievalInterface`。
-"""
-
 from __future__ import annotations
 
 from typing import List

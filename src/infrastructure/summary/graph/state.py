@@ -1,4 +1,6 @@
-from typing import TypedDict, List, Dict, Literal, Any
+from typing import Any, Dict, List, TypedDict
+
+from src.domain.entities.analysis import ConversationAnalysisResult
 
 
 class SummaryState(TypedDict):
@@ -6,16 +8,12 @@ class SummaryState(TypedDict):
 
     group_id: int
     hours: int
-    raw_messages: List[Dict]
-    filtered_messages: List[Dict]
+    raw_messages: List[Dict[str, Any]]
+    filtered_messages: List[Dict[str, Any]]
     nickname_map: Dict[str, str]
     token_count: int
     selected_model: str
-    memory_context: str
     summary: str
     topics: List[Any]
-    analysis: Any
-    metadata: Dict
-    refresh_mode: Literal["high", "delta", "low"]
-    cache_hit: bool
-    cache_similarity: float
+    analysis: ConversationAnalysisResult
+    metadata: Dict[str, Any]
