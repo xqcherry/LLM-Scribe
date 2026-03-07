@@ -305,10 +305,18 @@
     <div class="topic-card">
         <div class="topic-title">{{ topic.topic }}</div>
 
-        {% if topic.participants_html %}
+        {% if topic.participants_html or topic.participants %}
         <div style="display:flex; align-items:center; gap:8px; margin: 4px 0 12px 0; flex-wrap: wrap;">
             <span style="font-size:12px; color:#64748b; font-weight:700;">参与者</span>
-            {{ topic.participants_html | safe }}
+            {% if topic.participants_html %}
+                {{ topic.participants_html | safe }}
+            {% else %}
+                {% for participant in topic.participants %}
+                    <span class="user-capsule">
+                        <span class="capsule-name">{{ participant }}</span>
+                    </span>
+                {% endfor %}
+            {% endif %}
         </div>
         {% endif %}
 

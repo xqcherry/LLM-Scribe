@@ -20,4 +20,4 @@ __pycache__/
 /models/
 
 # 测试
-/test
+/tests

@@ -40,4 +40,12 @@ class SummaryChain:
             }
         )
 
+        # 兜底清洗：过滤掉空 topic/detail 的噪声条目（如 {}）
+        result.topics = [
+            t
+            for t in result.topics
+            if (getattr(t, "topic", "") or "").strip()
+            or (getattr(t, "detail", "") or "").strip()
+        ]
+
         return result
