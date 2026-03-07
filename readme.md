@@ -1,90 +1,179 @@
-LLM-Scribe
-==========
+# LLM-Scribe
 
-LLM-Scribe 是一个适配 NoneBot + OneBot (QQ) 的群聊摘要插件。它会抓取指定时间窗口内的群消息，调用 Moonshot LLM 生成高密度摘要，并利用数据库缓存与“短/长期记忆”来避免重复推理。
+LLM-Scribe 是一个面向 QQ 群场景的智能摘要系统，基于 NoneBot2 + OneBot v11 构建。项目聚焦“高可读、低打扰、可持续演进”的群聊信息整理体验：从消息抓取、语义压缩、记忆复用到可视化报告渲染，形成完整的端到端链路。
 
-功能亮点
---------
-- `/sum` 命令即可生成最近 1~24 小时的群聊摘要，支持快捷参数（`/sum 12`、`/sum day`）。
-- 智能噪声过滤：剔除 CQ 码、表情、转发、图片等低价值内容。
-- 多级记忆：短期记忆记录最近摘要，长期记忆以版本号沉淀历史摘要；缓存避免重复读库。
-- 自适应刷新模式：根据消息增量自动选择全量推理（High Refresh）或复用上次摘要（Low Refresh）。
-- 摘要格式结构化，包含基础信息、整体摘要以及按话题拆分的结论。
+---
 
-目录概览
---------
-- `llm_scribe/__init__.py`：注册 NoneBot 命令、参数解析、调用核心 `run()`。
-- `llm_scribe/main/manger.py`：根据窗口选择刷新策略并驱动记忆/缓存逻辑。
-- `llm_scribe/DB/*`：数据库连接与消息、缓存、记忆的读写。
-- `llm_scribe/memory/*`：短期记忆 `memory_short`、长期记忆 `memory_long`、缓存 `cache` 以及刷新策略实现。
-- `llm_scribe/Prompt/*` 与 `llm_scribe/LLM/model.py`：Moonshot 模型封装与提示词模板。
-- `llm_scribe/utils/*`：消息清洗、分片、元信息、文本美化、时间换算、合并转发等工具。
+## 项目亮点
 
-环境需求
---------
+### 1) 面向真实群聊场景的摘要体验
+- 支持 `/sum`、`/sum <hours>`、`/sum day|d` 等命令。
+- 当前查询窗口支持 **1~72 小时（最高 3 天）**。
+- 参数校验与防御逻辑完整，异常输入会给出明确反馈。
+
+### 2) 图片化报告输出，阅读效率更高
+- 机器人最终返回的是 **渲染后的摘要图片**，避免长文本刷屏。
+- 通过 HTML 模板 + 图片渲染链路，使报告结构更稳定、样式更统一。
+- 对图片渲染结果做了空值/类型校验，保障发送质量。
+
+### 3) 噪声过滤 + 语义提炼，提升信息密度
+- 过滤 CQ 码、低价值消息与干扰内容。
+- 对消息进行格式化、抽取与压缩，增强模型输入质量。
+- 摘要输出包含结构化信息，便于快速回看关键结论。
+
+### 4) 多级记忆与缓存机制，降低重复推理成本
+- 短期记忆沉淀最近上下文，长期记忆沉淀历史脉络。
+- 缓存机制减少重复计算，提升响应性能和稳定性。
+- 支持在“增量变化不大”场景下复用既有信息，降低推理负载。
+
+### 5) 可扩展的分层架构
+- 采用清晰的领域分层和端口适配思想。
+- 摘要生成器、报告渲染器、存储层均可替换实现。
+- 便于后续接入不同模型、不同存储、不同渲染方案。
+
+---
+
+## 核心架构
+
+项目主要分为四层：`interfaces`、`application`、`domain`、`infrastructure`。
+
+### 架构分层
+
+- `src/interfaces/`：
+  - 对接机器人协议和命令入口。
+  - 示例：`src/interfaces/bot/summary_command.py` 负责命令解析、防御校验、调用应用服务并发送图片。
+
+- `src/application/`：
+  - 编排业务流程，定义端口接口。
+  - 示例：`SummaryReportApplicationService` 作为门面，串联“摘要生成 + 报告渲染”。
+
+- `src/domain/`：
+  - 沉淀核心实体与领域服务。
+  - 示例：`SummaryResult`、记忆与格式化相关领域对象。
+
+- `src/infrastructure/`：
+  - 提供外部能力实现：LLM、持久化、过滤、渲染、检索等。
+  - 示例：
+    - `summary/adapters/graph_summary_adapter.py`（摘要生成适配）
+    - `reporting/adapters/html_report_adapter.py`（HTML 报告渲染）
+    - `persistence/adapters/mysql_message_repository.py`（消息存储）
+
+### 端到端执行链路
+
+1. 用户在群内触发 `/sum` 命令。
+2. 命令层解析参数（默认 6 小时，最大 72 小时），完成合法性校验。
+3. 应用服务调用摘要生成端口，从消息源提取窗口期数据。
+4. 基础设施层执行过滤、压缩、检索与 LLM 推理，得到结构化摘要。
+5. 报告渲染器将摘要注入模板，渲染为图片字节。
+6. 机器人发送渲染图片到群聊，完成交付。
+
+### 关键设计原则
+
+- **稳定优先**：命令层与渲染层均有防御性检查。
+- **解耦优先**：通过 Port/Adapter 隔离外部依赖。
+- **演进优先**：模块边界明确，便于逐步替换内部实现。
+
+---
+
+## 目录结构（核心）
+
+```text
+src/
+├─ interfaces/                 # 协议适配与命令入口
+│  └─ bot/summary_command.py
+├─ application/                # 应用服务与端口
+│  ├─ services/summary_report_app_service.py
+│  └─ ports/
+├─ domain/                     # 领域实体与规则
+│  ├─ entities/
+│  └─ services/
+└─ infrastructure/             # 外部能力实现
+   ├─ summary/                 # 摘要图/链路实现
+   ├─ reporting/               # HTML 模板与图片渲染
+   ├─ persistence/             # MySQL 等持久化
+   ├─ llm/                     # 模型网关与供应商适配
+   ├─ retrieval/               # 检索与重排
+   ├─ memory/                  # 语义记忆
+   └─ cache/                   # 缓存能力
+```
+
+---
+
+## 快速开始
+
+### 环境要求
 - Python 3.10+
-- NoneBot2 与 nonebot-adapter-onebot v11
-- 主要三方依赖：`pymysql`, `langchain`, `langchain-community`, `moonshot`, `zoneinfo` (Python 3.9+ 自带), 以及一个可用的 Moonshot API Key
+- NoneBot2
+- nonebot-adapter-onebot v11
+- 可用的 LLM API Key（当前默认 Moonshot）
+- MySQL（用于消息与记忆相关数据）
 
-安装步骤
---------
-1. 将 `llm_scribe` 目录放入 NoneBot 插件目录（或以包形式安装），在 `bot.py` 中 `nonebot.load_plugin("llm_scribe")`。
-2. 安装依赖：
-   ```
-   pip install nonebot2[fastapi] nonebot-adapter-onebot pymysql langchain langchain-community
-   ```
-3. 复制配置模板：`cp config.env.example .env`，并在 `.env` 中填入实际密钥。
-4. 按下文配置环境变量后启动 NoneBot。
+### 安装依赖
 
-环境变量与隐私
---------------
-所有敏感信息已移除，请在运行环境中注入以下变量（可放入 `.env`）：
-
-| 变量名 | 说明 |
-| --- | --- |
-| `DB_HOST` | MySQL 主机 |
-| `DB_PORT` | MySQL 端口，整数 |
-| `DB_USER` | 数据库用户名 |
-| `DB_PASSWORD` | 数据库密码 |
-| `DB_NAME` | 存放消息/记忆的数据库名 |
-| `DB_CHARSET` | 字符集（例如 `utf8mb4`） |
-| `MOONSHOT_API_KEY` | Moonshot LLM 的 API Key |
-
-示例：`config.env.example` 提供占位符配置，复制后在 `.env` 中填入真实值：
+```bash
+pip install nonebot2[fastapi] nonebot-adapter-onebot pymysql langchain langchain-community
 ```
-cp config.env.example .env
+
+### 配置环境变量
+将示例配置复制到 `.env` 后填入真实值：
+
+```bash
+cp .env.example .env
 ```
-（`.env` 已加入 `.gitignore`，真实密钥仅保存在本地环境。）
 
-使用方式
---------
-- `/sum`：默认 6 小时
-- `/sum <n>`：最近 n 小时（1~24 的整数）
-- `/sum day` 或 `/sum d`：24 小时
-- `/sum help`：显示帮助
+常见变量包括：
+- `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME`
+- `MOONSHOT_API_KEY`
 
-机器人会自动将摘要拆分为合并转发消息发回群里。
+---
 
-工作流程
---------
-1. `run(group_id, hours)` 从数据库拉取消息并调用 `filter_msgs()` 做 CQ 清洗与忽略名单过滤。
-2. 根据缓存/短期记忆判定刷新模式：
-   - **High Refresh**：重新生成摘要，更新短期记忆、长期记忆与缓存；
-   - **High Refresh Chunk**：当消息量 > 220 条时按 220/50 重叠切片分多段摘要；
-   - **Low Refresh**：无新消息，仅更新时间戳并返回上次摘要。
-3. `Prompt` 模块拼接系统提示与聊天文本，`LLM/model.py` 包装 Moonshot 模型进行推理。
-4. `text_utils` 对输出做去 Markdown、美化、添加基础信息等处理。
-5. `send_forward_msg` 调用 OneBot API 以合并转发方式发送。
+## 使用说明
 
-开发与调试
-----------
-- 可在独立脚本内直接调用 `llm_scribe.main.manger.run(<group_id>, <hours>)` 获取摘要。
-- `IGNORE_QQ` 位于 `llm_scribe/main/manger.py`，可按照需要扩展。
-- 数据表依赖：`messages_event_logs`, `chat_cache`, `memory_short`, `memory_long`，需提前建表。
-- 推荐在本地配置 `.env` 或通过进程管理器注入变量，确保敏感信息不写入代码仓库。
+- `/sum`：默认最近 6 小时
+- `/sum <n>`：最近 n 小时（`1 <= n <= 72`）
+- `/sum day` 或 `/sum d`：最近 24 小时
+- `/sum help` 或 `/sum ls`：查看帮助
 
-致谢与隐私说明
----------------
-- 本仓库已清除硬编码数据库凭据与 API Key，请勿再将真实密钥写入源码。
-- 部署时请限制数据库访问来源，并为机器人帐号配置必要的群权限。
+> 当前命令执行结果以图片报告形式返回。
+
+---
+
+## 未来迁移与更新计划
+
+为了让项目在可靠性、性能和可维护性上进一步提升，规划如下：
+
+### 阶段一（近期）
+1. **测试体系增强**
+   - 补齐命令层参数校验、异常分支、图片输出分支的单元测试与集成测试。
+2. **配置与可观测性增强**
+   - 将关键阈值（如窗口上限、渲染超时、过滤策略）配置化。
+   - 增加统一日志字段与请求链路追踪，便于生产排障。
+3. **错误恢复机制优化**
+   - 细化渲染失败、模型失败、数据库失败的降级策略与重试策略。
+
+### 阶段二（中期）
+1. **存储与检索能力升级**
+   - 引入更清晰的数据分层（原始消息、压缩语料、记忆索引）。
+   - 优化检索链路（召回 + 重排）以提升长窗口摘要质量。
+2. **多模型网关化**
+   - 在现有 LLM 适配基础上支持多供应商切换，统一调用协议。
+3. **模板系统升级**
+   - 报告模板主题化（深色/浅色、群定制样式），支持版本化管理。
+
+### 阶段三（长期）
+1. **架构迁移与服务化**
+   - 将核心摘要链路逐步从插件内耦合模式迁移到独立服务（可选 HTTP/gRPC）。
+   - 使机器人只负责“命令接入 + 结果投递”，核心计算服务独立弹性扩缩。
+2. **任务调度与异步化**
+   - 引入任务队列，支持大窗口摘要、定时摘要与批量群处理。
+3. **治理与平台化**
+   - 构建管理面板（配置、模板、质量评估、审计日志），提升多群运维能力。
+
+---
+
+## 安全与隐私说明
+
+- 请勿将真实密钥提交到仓库。
+- 建议通过环境变量或密钥管理系统注入敏感配置。
+- 生产环境建议限制数据库访问来源，并最小化机器人权限。
 
