@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any, Set
+from typing import Set
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -38,41 +38,6 @@ class Config(BaseModel):
     llm_api_key: str = Field(
         default=os.getenv("LLM_API_KEY"),
         description="通用 LLM API Key",
-    )
-
-    # Redis 配置
-    redis_host: str = Field(default=os.getenv("REDIS_HOST", "localhost"))
-    redis_port: int = Field(default=int(os.getenv("REDIS_PORT", 6379)))
-    redis_db: int = Field(default=int(os.getenv("REDIS_DB", "0")))
-    redis_password: Optional[str] = Field(default=os.getenv("REDIS_PASSWORD", None))
-
-    # ChromaDB 配置
-    chroma_host: str = Field(default=os.getenv("CHROMA_HOST", "localhost"))
-    chroma_port: int = Field(default=int(os.getenv("CHROMA_PORT", "8000")))
-    chroma_collection_name: str = Field(default=os.getenv("CHROMA_COLLECTION_NAME", "group_summaries"))
-
-    # HuggingFace 配置
-    huggingface_model_name: str = Field(
-        default=os.getenv("HUGGINGFACE_MODEL_NAME", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
-        description="模型名称或本地路径"
-    )
-    huggingface_model_kwargs: Dict[str, Any] = Field(
-        default_factory=lambda: {"device": os.getenv("HUGGINGFACE_MODEL_DEVICE", "cpu")},
-        description="模型运行参数"
-    )
-
-    # RAG 策略
-    cache_similarity_threshold: float = Field(
-        default=float(os.getenv("CACHE_SIMILARITY_THRESHOLD", "0.85"))
-    )
-    retrieval_score_threshold: float = Field(
-        default=float(os.getenv("RETRIEVAL_SCORE_THRESHOLD", "0.7"))
-    )
-    retrieval_use_compression: bool = Field(
-        default=os.getenv("RETRIEVAL_USE_COMPRESSION", "true").lower() == "true"
-    )
-    retrieval_use_hybrid_search: bool = Field(
-        default=os.getenv("RETRIEVAL_USE_HYBRID_SEARCH", "true").lower() == "true"
     )
 
     ignore_qq: Set[int] = Field(

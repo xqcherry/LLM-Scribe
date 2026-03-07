@@ -1,27 +1,27 @@
-# --- 核心框架 ---
+# Core bot framework
 nonebot2>=2.2.0
 nonebot-adapter-onebot>=2.4.0
+
+# Config and data models
 pydantic>=2.0.0
-python-dotenv
-asyncio
+python-dotenv>=1.0.0
 
-# --- AI 与 大模型  ---
-torch>=2.4.0
-transformers>=4.40.0
-sentence-transformers>=3.0.0
-langchain>=0.1.0
-langgraph>=0.0.30
-langchain-openai
-langchain-community
+# LLM workflow
+langgraph>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
 
-# --- 存储与数据库 ---
-redis>=5.0.0
-chromadb>=0.5.0
-motor>=3.3.0
-pymysql
-cryptography
+# Token counting
+tiktoken>=0.7.0
 
-# --- 工具类 ---
-loguru
-tiktoken
-numpy>=1.24.0
+# Persistence
+pymysql>=1.1.0
+cryptography>=42.0.0
+
+# Report rendering
+aiohttp>=3.9.0
+jinja2>=3.1.0
+playwright>=1.46.0
+
+# Logging
+loguru>=0.7.0
