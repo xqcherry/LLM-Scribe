@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 
 
-class MessageRepositoryInterface(ABC):
+class MessageRepositoryPort(ABC):
     """群消息仓储抽象接口。"""
 
     @abstractmethod

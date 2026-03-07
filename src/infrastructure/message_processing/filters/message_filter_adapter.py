@@ -1,9 +1,11 @@
 from typing import Any, List, Dict, Set
-from src.config import plugin_config
-from src.domain.services.msg_filter_service import MessageFilterInterface
-from src.infrastructure.pipeline.detail.cq_filter import cq_filter
 
-class MessageFilterImpl(MessageFilterInterface):
+from src.application.ports.message_filter_port import MessageFilterPort
+from src.config import plugin_config
+from src.infrastructure.message_processing.filters.cq_filter import cq_filter
+
+
+class MessageFilterImpl(MessageFilterPort):
     """MessageFilterInterface 的具体实现，执行物理过滤与内容清洗"""
 
     def __init__(self):

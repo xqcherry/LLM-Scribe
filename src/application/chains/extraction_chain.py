@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.output_parsers import JsonOutputParser
 
 from src.infrastructure.pipeline.detail.cq_filter import cq_filter
-from src.domain.prompts.templates.extraction_prompt import ExtractionPromptTemplate
+from src.infrastructure.prompts import ExtractionPromptTemplate
 
 
 class ExtractionResult(BaseModel):

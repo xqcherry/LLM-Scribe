@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Dict, Any
 
-from src.infrastructure.pipeline.detail.cq_filter import cq_filter
+from src.infrastructure.message_processing.filters.cq_filter import cq_filter
 
 
 def format_messages(messages: List[Dict]) -> tuple[str, dict[Any, Any]]:

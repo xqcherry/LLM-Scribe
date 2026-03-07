@@ -19,4 +19,3 @@ class SummaryState(TypedDict):
     refresh_mode: Literal["high", "delta", "low"]
     cache_hit: bool
     cache_similarity: float
-

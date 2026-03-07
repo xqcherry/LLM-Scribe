@@ -17,15 +17,15 @@ class SummaryFormatService:
         for i, t in enumerate(topics[:8], 1):
             topic_title = getattr(t, "topic", f"话题 {i}")
             topic_detail = getattr(t, "detail", "（无详细内容）")
-            contributors = getattr(t, "contributors", [])
+            participants = getattr(t, "participants", [])
 
             # 格式：数字编号 + 加粗标题
             lines.append(f"{i}. #**{topic_title}**#")
-            
+
             # 参与者信息（如果有）
-            if contributors:
-                contributors_str = "、".join(contributors[:5])
-                lines.append(f"   👥 参与者: {contributors_str}")
+            if participants:
+                participants_str = "、".join(participants[:5])
+                lines.append(f"   👥 参与者: {participants_str}")
             
             # 话题详情
             lines.append(f"   └ {topic_detail}")

@@ -305,10 +305,10 @@
     <div class="topic-card">
         <div class="topic-title">{{ topic.topic }}</div>
 
-        {% if topic.contributors_html %}
+        {% if topic.participants_html %}
         <div style="display:flex; align-items:center; gap:8px; margin: 4px 0 12px 0; flex-wrap: wrap;">
             <span style="font-size:12px; color:#64748b; font-weight:700;">参与者</span>
-            {{ topic.contributors_html | safe }}
+            {{ topic.participants_html | safe }}
         </div>
         {% endif %}
 

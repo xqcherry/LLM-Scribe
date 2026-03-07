@@ -105,9 +105,9 @@ class ReportGenerator:
                 nickname_map=nickname_map
             )
 
-            contributors = topic.get("contributors", []) or []
-            topic["contributors_html"] = await self._render_contributors_capsules(
-                contributors,
+            participants = topic.get("participants", []) or []
+            topic["participants_html"] = await self._render_participants_capsules(
+                participants,
                 avatar_getter,
                 nickname_getter,
                 nickname_map=nickname_map,
@@ -133,8 +133,8 @@ class ReportGenerator:
     async def _inject_capsules(
             self,
             text: str,
-            avatar_getter: Callable,
-            nickname_getter: Callable,
+            avatar_getter: Optional[Callable],
+            nickname_getter: Optional[Callable],
             nickname_map: Optional[Dict[str, str]] = None,
     ) -> str:
         """识别 [ID] 并转换为 HTML 胶囊"""
@@ -178,19 +178,19 @@ class ReportGenerator:
         return result_html
 
 
-    async def _render_contributors_capsules(
+    async def _render_participants_capsules(
             self,
-            contributors: list,
+            participants: list,
             avatar_getter: Optional[Callable],
             nickname_getter: Optional[Callable],
             nickname_map: Optional[Dict[str, str]] = None,
     ) -> str:
         """将参与者列表渲染为胶囊 HTML"""
-        if not contributors:
+        if not participants:
             return ""
 
         user_ids = []
-        for uid in contributors:
+        for uid in participants:
             uid_str = str(uid).strip()
             if uid_str and uid_str not in user_ids:
                 user_ids.append(uid_str)
@@ -224,8 +224,8 @@ class ReportGenerator:
     async def _get_user_card(
             self,
             user_id: str,
-            a_getter: Callable,
-            n_getter: Callable,
+            a_getter: Optional[Callable],
+            n_getter: Optional[Callable],
             nickname_map: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str]:
         """获取用户头像昵称：统一转义与短路优化版"""
@@ -263,7 +263,7 @@ class ReportGenerator:
         }
 
 
-    async def _get_user_avatar_base64(self, user_id: str, getter: Callable) -> str:
+    async def _get_user_avatar_base64(self, user_id: str, getter: Optional[Callable]) -> str:
         """带缓存的头像获取"""
         cache_file = self.avatar_cache_dir / f"{user_id}.png"
 

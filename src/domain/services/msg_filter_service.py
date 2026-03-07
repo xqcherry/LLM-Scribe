@@ -22,7 +22,9 @@ class MessageFilter:
         if processor:
             self._processor = processor
         else:
-            from src.infrastructure.pipeline.msg_filter_impl import MessageFilterImpl
+            from src.infrastructure.message_processing.filters.message_filter_adapter import (
+                MessageFilterImpl,
+            )
             self._processor = MessageFilterImpl()
 
     def get_cleaned_messages(self, raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

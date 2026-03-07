@@ -1,11 +1,13 @@
 import asyncio
+import base64
+
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, Bot
+from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, Message, MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from src.application.services.group_summary_app_service import (
-    GroupSummaryApplicationService,
+from src.application.services.summary_report_app_service import (
+    SummaryReportApplicationService,
 )
 
 
@@ -23,8 +25,7 @@ HELP_TEXT = (
     "(只支持 1~24 小时的整数)\n"
 )
 
-# 应用服务实例（当前为无状态实现，可直接复用）
-_summary_app_service = GroupSummaryApplicationService()
+_summary_report_service = SummaryReportApplicationService()
 
 
 @smy_cmd.handle()
@@ -51,24 +52,29 @@ async def _(bot: Bot, event: GroupMessageEvent, args: Message = CommandArg()):
             return
 
     try:
-        # 通过应用服务层调用摘要用例（内部仍然使用 SummaryGraph）
-        summary_result = await _summary_app_service.summarize_group(group_id, hours)
-        summary_text = summary_result.summary_text
+        summary_result, image_bytes = await _summary_report_service.summarize_and_render_image(
+            group_id=group_id,
+            hours=hours,
+        )
 
+        summary_text = summary_result.summary_text
         if not summary_text or not isinstance(summary_text, str):
             await smy_cmd.send("未生成有效摘要内容。")
             return
 
-        # 直接以文本形式发送摘要（按段落拆分，避免单条过长）
+        if image_bytes:
+            image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+            await bot.send(event, MessageSegment.image(f"base64://{image_b64}"))
+            return
+
         await send_parts(bot, event, summary_text.split("\n\n"))
-        return
 
     except Exception as e:
         logger.error(f"[LLM-Scribe] 群 {group_id} 摘要生成失败: {e}")
         await smy_cmd.send(f"摘要生成失败: {e}")
 
 
-async def send_parts(bot, event, parts):
+async def send_parts(bot: Bot, event: GroupMessageEvent, parts: list[str]) -> None:
     for p in parts:
         p = p.strip()
         if not p:

@@ -20,7 +20,7 @@ def data_adapter(summary_result: SummaryResult) -> Dict[str, Any]:
         {
             "topic": topic.topic,
             "detail": topic.detail,
-            "contributors": topic.contributors,
+            "participants": topic.participants,
         }
         for topic in summary_result.topics
     ]

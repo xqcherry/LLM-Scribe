@@ -1,21 +1,14 @@
-"""
-消息仓储具体实现（基于 MySQL）。
-
-从原先的 `src.storage.database.repositories` 迁移而来，
-保持 SQL 与行为完全一致，但不再依赖旧模块。
-"""
-
 from __future__ import annotations
 
 from typing import Dict, List
 
 import pymysql
 
-from src.domain.repositories.message_repository import MessageRepositoryInterface
+from src.application.ports.message_repository_port import MessageRepositoryPort
 from src.infrastructure.persistence.db_connection import get_connection
 
 
-class MySQLMessageRepository(MessageRepositoryInterface):
+class MySQLMessageRepository(MessageRepositoryPort):
     """基于 MySQL 的消息仓储实现。"""
 
     def get_group_messages(self, group_id: int, hours: int = 24) -> List[Dict]:

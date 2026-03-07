@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_core.output_parsers import StrOutputParser
 
-from src.domain.prompts.templates.compression_prompt import CompressionPromptTemplate
+from src.infrastructure.prompts import CompressionPromptTemplate
 
 
 class CompressionChain:

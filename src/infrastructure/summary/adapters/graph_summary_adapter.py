@@ -1,16 +1,19 @@
-from src.application.graph.summary_graph import SummaryGraph
+from __future__ import annotations
+
+from src.application.ports.summary_generator_port import SummaryGeneratorPort
 from src.domain.entities.analysis import ConversationAnalysisResult
 from src.domain.entities.summary import TopicSummary
 from src.domain.entities.summary_result import SummaryContext, SummaryResult
+from src.infrastructure.summary.graph.summary_graph import SummaryGraph
 
 
-class GroupSummaryApplicationService:
+class GraphSummaryAdapter(SummaryGeneratorPort):
+    """基于 SummaryGraph 的摘要生成适配器。"""
 
     def __init__(self, graph: SummaryGraph | None = None) -> None:
         self._graph = graph or SummaryGraph()
 
-    async def summarize_group(self, group_id: int, hours: int) -> SummaryResult:
-        """返回统一的摘要结果对象。"""
+    async def generate_summary(self, group_id: int, hours: int) -> SummaryResult:
         result = await self._graph.invoke(group_id, hours)
 
         raw_topics = result.get("topics", []) or []
