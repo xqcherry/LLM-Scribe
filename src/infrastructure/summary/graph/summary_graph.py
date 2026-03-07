@@ -125,7 +125,7 @@ class SummaryGraph:
                 state["selected_model"],
                 state["token_count"],
             )
-        except Exception:
+        except Exception as _:
             estimated_cost = 0.0
 
         token_usage = TokenUsage(
@@ -165,4 +165,4 @@ class SummaryGraph:
         }
 
         result = await self.graph.ainvoke(cast(Any, initial_state))
-        return cast(Dict[str, Any], result)
+        return result
