@@ -3,6 +3,7 @@ from typing import Any, Dict, cast
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from src.application.ports.llm_gateway_port import LLMGatewayPort
 from src.application.ports.message_filter_port import MessageFilterPort
 from src.application.ports.message_repository_port import MessageRepositoryPort
 from src.domain.entities.analysis import (
@@ -11,9 +12,8 @@ from src.domain.entities.analysis import (
     ConversationStatistics,
     TokenUsage,
 )
-from src.domain.services.llm_service import LLMModelFactoryInterface
 from src.domain.services.summary_format_service import SummaryFormatService
-from src.infrastructure.llm.factory_impl import LLMProviderFactoryAdapter
+from src.infrastructure.llm.adapters.llm_gateway_adapter import LLMGatewayAdapter
 from src.infrastructure.message_processing.extractors.meta_extractor import compute_message_meta
 from src.infrastructure.message_processing.filters.message_filter_adapter import MessageFilterImpl
 from src.infrastructure.persistence.adapters.mysql_message_repository import (
@@ -28,11 +28,11 @@ class SummaryGraph:
 
     def __init__(
         self,
-        model_factory: LLMModelFactoryInterface | None = None,
+        llm_gateway: LLMGatewayPort | None = None,
         message_repository: MessageRepositoryPort | None = None,
         filter_service: MessageFilterPort | None = None,
     ) -> None:
-        self.model_factory = model_factory or LLMProviderFactoryAdapter()
+        self.llm_gateway = llm_gateway or LLMGatewayAdapter()
         self.message_repo = message_repository or MySQLMessageRepository()
         self.filter_service = filter_service or MessageFilterImpl()
         self.graph = self._build_graph()
@@ -80,19 +80,19 @@ class SummaryGraph:
 
     def count_tokens(self, state: SummaryState) -> SummaryState:
         """计算 token"""
-        state["token_count"] = self.model_factory.token_counter.count_messages_tokens(
+        state["token_count"] = self.llm_gateway.token_counter.count_messages_tokens(
             state["filtered_messages"]
         )
         return state
 
     def select_model(self, state: SummaryState) -> SummaryState:
         """选择模型"""
-        state["selected_model"] = self.model_factory.select_model(state["token_count"])
+        state["selected_model"] = self.llm_gateway.select_model(state["token_count"])
         return state
 
     async def generate_summary(self, state: SummaryState) -> SummaryState:
         """生成LLM结构化摘要"""
-        llm = self.model_factory.create_model(model_name=state["selected_model"])
+        llm = self.llm_gateway.create_model(model_name=state["selected_model"])
 
         chain = SummaryChain(llm, max_topics=5)
         result = await chain.invoke(state["filtered_messages"])
@@ -121,7 +121,7 @@ class SummaryGraph:
         )
 
         try:
-            estimated_cost = self.model_factory.estimate_cost(
+            estimated_cost = self.llm_gateway.estimate_cost(
                 state["selected_model"],
                 state["token_count"],
             )
