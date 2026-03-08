@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from src.application.ports.summary_generator_port import SummaryGeneratorPort
-from src.domain.entities.analysis import ConversationAnalysisResult
-from src.domain.entities.summary import TopicSummary
-from src.domain.entities.summary_result import SummaryContext, SummaryResult
-from src.infrastructure.summary.graph.summary_graph import SummaryGraph
+from ....application.ports.summary_generator_port import SummaryGeneratorPort
+from ....domain.entities.analysis import ConversationAnalysisResult
+from ....domain.entities.summary import TopicSummary
+from ....domain.entities.summary_result import SummaryContext, SummaryResult
+from ..graph.summary_graph import SummaryGraph
 
 
 class GraphSummaryAdapter(SummaryGeneratorPort):

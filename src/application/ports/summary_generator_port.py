@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from src.domain.entities.summary_result import SummaryResult
+from ...domain.entities.summary_result import SummaryResult
 
 
 class SummaryGeneratorPort(Protocol):

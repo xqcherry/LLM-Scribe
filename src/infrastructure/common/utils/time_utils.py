@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from src.infrastructure.common.adapters.utility_service_adapter import UtilityServiceAdapter
+from ..adapters.utility_service_adapter import UtilityServiceAdapter
 
 _utility = UtilityServiceAdapter()
 

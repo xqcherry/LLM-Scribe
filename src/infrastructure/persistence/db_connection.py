@@ -1,5 +1,5 @@
 import pymysql
-from src.config import plugin_config as config
+from ...config import plugin_config as config
 
 
 def _load_db_config() -> dict:

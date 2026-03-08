@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from src.application.ports.llm_gateway_port import LLMGatewayPort
-from src.infrastructure.llm.providers.moonshot_provider import MoonshotProvider
+from ....application.ports.llm_gateway_port import LLMGatewayPort
+from ..providers.moonshot_provider import MoonshotProvider
 
 
 class LLMGatewayAdapter(LLMGatewayPort):

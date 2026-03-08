@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from src.application.ports.prompt_provider_port import PromptProviderPort
-from src.infrastructure.prompts.templates.compression_prompt import CompressionPromptTemplate
-from src.infrastructure.prompts.templates.extraction_prompt import ExtractionPromptTemplate
-from src.infrastructure.prompts.templates.summary_prompt import SummaryPromptTemplate
+from ....application.ports.prompt_provider_port import PromptProviderPort
+from ..templates.compression_prompt import CompressionPromptTemplate
+from ..templates.extraction_prompt import ExtractionPromptTemplate
+from ..templates.summary_prompt import SummaryPromptTemplate
 
 
 class PromptProviderImpl(PromptProviderPort):

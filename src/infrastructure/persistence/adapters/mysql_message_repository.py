@@ -4,8 +4,8 @@ from typing import Dict, List
 
 import pymysql
 
-from src.application.ports.message_repository_port import MessageRepositoryPort
-from src.infrastructure.persistence.db_connection import get_connection
+from ....application.ports.message_repository_port import MessageRepositoryPort
+from ..db_connection import get_connection
 
 
 class MySQLMessageRepository(MessageRepositoryPort):

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from src.domain.entities.summary_result import SummaryResult
+from ...domain.entities.summary_result import SummaryResult
 
 
 def data_adapter(summary_result: SummaryResult) -> Dict[str, Any]:

@@ -5,7 +5,7 @@ from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, Message, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from src.application.services.summary_report_app_service import (
+from ...application.services.summary_report_app_service import (
     SummaryReportApplicationService,
 )
 

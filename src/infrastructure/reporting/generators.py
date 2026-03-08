@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 from datetime import datetime
 
-from src.domain.entities.summary_result import SummaryResult
-from src.infrastructure.reporting.data_adapter import data_adapter
-from src.infrastructure.reporting.html_render import HTMLRenderer
-from src.infrastructure.reporting.templates import HTMLTemplates
+from ...domain.entities.summary_result import SummaryResult
+from .data_adapter import data_adapter
+from .html_render import HTMLRenderer
+from .templates import HTMLTemplates
 
 
 class ReportGenerator:

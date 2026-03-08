@@ -4,8 +4,8 @@ from typing import Optional
 
 from langchain_community.chat_models.moonshot import MoonshotChat
 
-from src.config import plugin_config as config
-from src.infrastructure.llm.tokenizers.token_counter import TokenCounter
+from ....config import plugin_config as config
+from ..tokenizers.token_counter import TokenCounter
 
 
 class MoonshotProvider:

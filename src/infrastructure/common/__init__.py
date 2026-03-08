@@ -1,7 +1,7 @@
-from src.infrastructure.common.adapters.utility_service_adapter import (
+from .adapters.utility_service_adapter import (
     UtilityServiceAdapter,
 )
-from src.infrastructure.common.utils.time_utils import (
+from .utils.time_utils import (
     now_shanghai,
     shanghai_to_unix,
     unix_to_shanghai,

@@ -2,9 +2,9 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from typing import Dict, List
 
-from src.domain.entities.summary import SummaryOutput
-from src.infrastructure.prompts import SummaryPromptTemplate
-from src.infrastructure.message_processing.formatters.format_messages import format_messages
+from ....domain.entities.summary import SummaryOutput
+from ...prompts import SummaryPromptTemplate
+from ...message_processing.formatters.format_messages import format_messages
 
 
 class SummaryChain:

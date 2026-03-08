@@ -1,8 +1,8 @@
 from typing import Any, List, Dict, Set
 
-from src.application.ports.message_filter_port import MessageFilterPort
-from src.config import plugin_config
-from src.infrastructure.message_processing.filters.cq_filter import cq_filter
+from ....application.ports.message_filter_port import MessageFilterPort
+from ....config import plugin_config
+from .cq_filter import cq_filter
 
 
 class MessageFilterImpl(MessageFilterPort):

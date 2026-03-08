@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from src.domain.entities.summary import SummaryOutput
+from ....domain.entities.summary import SummaryOutput
 
 
 class SummaryPromptTemplate:

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, TypedDict
 
-from src.domain.entities.analysis import ConversationAnalysisResult
+from ....domain.entities.analysis import ConversationAnalysisResult
 
 
 class SummaryState(TypedDict):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-from src.application.ports.utility_service_port import UtilityServicePort
+from ....application.ports.utility_service_port import UtilityServicePort
 
 
 class UtilityServiceAdapter(UtilityServicePort):

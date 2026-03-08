@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 
-from src.infrastructure.common.utils.time_utils import unix_to_shanghai
+from ...common.utils.time_utils import unix_to_shanghai
 
 
 def compute_message_meta(msgs: List[Dict[str, Any]]) -> Dict[str, Any]:

@@ -3,24 +3,24 @@ from typing import Any, Dict, cast
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from src.application.ports.llm_gateway_port import LLMGatewayPort
-from src.application.ports.message_filter_port import MessageFilterPort
-from src.application.ports.message_repository_port import MessageRepositoryPort
-from src.domain.entities.analysis import (
+from ....application.ports.llm_gateway_port import LLMGatewayPort
+from ....application.ports.message_filter_port import MessageFilterPort
+from ....application.ports.message_repository_port import MessageRepositoryPort
+from ....domain.entities.analysis import (
     ActivityStatistics,
     ConversationAnalysisResult,
     ConversationStatistics,
     TokenUsage,
 )
-from src.domain.services.summary_format_service import SummaryFormatService
-from src.infrastructure.llm.adapters.llm_gateway_adapter import LLMGatewayAdapter
-from src.infrastructure.message_processing.extractors.meta_extractor import compute_message_meta
-from src.infrastructure.message_processing.filters.message_filter_adapter import MessageFilterImpl
-from src.infrastructure.persistence.adapters.mysql_message_repository import (
+from ....domain.services.summary_format_service import SummaryFormatService
+from ...llm.adapters.llm_gateway_adapter import LLMGatewayAdapter
+from ...message_processing.extractors.meta_extractor import compute_message_meta
+from ...message_processing.filters.message_filter_adapter import MessageFilterImpl
+from ...persistence.adapters.mysql_message_repository import (
     MySQLMessageRepository,
 )
-from src.infrastructure.summary.chains.summary_chain import SummaryChain
-from src.infrastructure.summary.graph.state import SummaryState
+from ..chains.summary_chain import SummaryChain
+from .state import SummaryState
 
 
 class SummaryGraph:

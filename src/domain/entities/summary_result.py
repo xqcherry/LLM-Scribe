@@ -4,8 +4,8 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
-from src.domain.entities.analysis import ConversationAnalysisResult
-from src.domain.entities.summary import TopicSummary
+from .analysis import ConversationAnalysisResult
+from .summary import TopicSummary
 
 
 class SummaryContext(BaseModel):

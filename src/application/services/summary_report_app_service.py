@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from src.application.ports.report_renderer_port import (
+from ..ports.report_renderer_port import (
     AvatarGetter,
     NicknameGetter,
     ReportRendererPort,
 )
-from src.application.ports.summary_generator_port import SummaryGeneratorPort
-from src.domain.entities.summary_result import SummaryResult
-from src.infrastructure.reporting.adapters.html_report_adapter import HtmlReportAdapter
-from src.infrastructure.summary.adapters.graph_summary_adapter import GraphSummaryAdapter
+from ..ports.summary_generator_port import SummaryGeneratorPort
+from ...domain.entities.summary_result import SummaryResult
+from ...infrastructure.reporting.adapters.html_report_adapter import HtmlReportAdapter
+from ...infrastructure.summary.adapters.graph_summary_adapter import GraphSummaryAdapter
 
 
 class SummaryReportApplicationService:

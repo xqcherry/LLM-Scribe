@@ -1,9 +1,9 @@
 """提示词基础设施模块。"""
 
-from src.infrastructure.prompts.providers.prompt_provider_impl import PromptProviderImpl
-from src.infrastructure.prompts.templates.compression_prompt import CompressionPromptTemplate
-from src.infrastructure.prompts.templates.extraction_prompt import ExtractionPromptTemplate
-from src.infrastructure.prompts.templates.summary_prompt import SummaryPromptTemplate
+from .providers.prompt_provider_impl import PromptProviderImpl
+from .templates.compression_prompt import CompressionPromptTemplate
+from .templates.extraction_prompt import ExtractionPromptTemplate
+from .templates.summary_prompt import SummaryPromptTemplate
 
 __all__ = [
     "CompressionPromptTemplate",
