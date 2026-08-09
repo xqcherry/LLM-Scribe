@@ -22,17 +22,15 @@ class GraphSummaryAdapter(SummaryGeneratorPort):
     async def generate_summary(self, group_id: int, hours: int) -> SummaryResult:
         cache_key = f"result:{group_id}:{hours}"
 
+        cached = self._result_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         result = await self._graph.invoke(group_id, hours)
         summary_result = self._build_summary_result(group_id, hours, result)
 
-        has_content = bool(summary_result.topics) or bool(summary_result.summary_text)
-        if not has_content:
-            cached = self._result_cache.get(cache_key)
-            if cached is not None:
-                return cached
-            return summary_result
-
-        self._result_cache.set(cache_key, summary_result)
+        if summary_result.topics or summary_result.summary_text:
+            self._result_cache.set(cache_key, summary_result)
         return summary_result
 
     @staticmethod

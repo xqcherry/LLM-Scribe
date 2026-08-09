@@ -6,7 +6,7 @@ class TTLCache:
     """带 TTL 的进程内缓存，用于 L1 最终结果与 L2 分块摘要。"""
 
     def __init__(self, default_ttl: float = 3600)-> None:
-        self._store = dict[str, tuple[Any, float]] = {}
+        self._store: dict[str, tuple[Any, float]] = {}
         self._default_ttl = default_ttl
 
     def get(self, key: str) -> Optional[Any]:
