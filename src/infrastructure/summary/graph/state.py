@@ -15,5 +15,10 @@ class SummaryState(TypedDict):
     selected_model: str
     summary: str
     topics: List[Any]
+    chunks: List[str]
+    extracted: List[str]
+    memory_context: str
+    is_incremental: bool
+    compressed_summary: str
     analysis: ConversationAnalysisResult
     metadata: Dict[str, Any]
