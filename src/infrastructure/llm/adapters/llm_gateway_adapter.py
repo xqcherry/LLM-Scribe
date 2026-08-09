@@ -32,7 +32,7 @@ class LLMGatewayAdapter(LLMGatewayPort):
         self,
         model_name: Optional[str] = None,
         temperature: float = 0.3,
-        max_tokens: int = 2000,
+        max_tokens: Optional[int] = None,
         prompt_tokens: Optional[int] = None,
     ) -> Any:
         return self._provider.create_model(
