@@ -4,18 +4,39 @@ from ....application.ports.summary_generator_port import SummaryGeneratorPort
 from ....domain.entities.analysis import ConversationAnalysisResult
 from ....domain.entities.summary import TopicSummary
 from ....domain.entities.summary_result import SummaryContext, SummaryResult
+from ...cache import TTLCache
 from ..graph.summary_graph import SummaryGraph
 
 
 class GraphSummaryAdapter(SummaryGeneratorPort):
-    """基于 SummaryGraph 的摘要生成适配器。"""
+    """基于 SummaryGraph 的摘要生成适配器，带 L1 结果缓存。"""
 
-    def __init__(self, graph: SummaryGraph | None = None) -> None:
+    def __init__(
+        self,
+        graph: SummaryGraph | None = None,
+        result_cache: TTLCache | None = None,
+    ) -> None:
         self._graph = graph or SummaryGraph()
+        self._result_cache = result_cache or TTLCache(default_ttl=600.0)
 
     async def generate_summary(self, group_id: int, hours: int) -> SummaryResult:
-        result = await self._graph.invoke(group_id, hours)
+        cache_key = f"result:{group_id}:{hours}"
 
+        result = await self._graph.invoke(group_id, hours)
+        summary_result = self._build_summary_result(group_id, hours, result)
+
+        has_content = bool(summary_result.topics) or bool(summary_result.summary_text)
+        if not has_content:
+            cached = self._result_cache.get(cache_key)
+            if cached is not None:
+                return cached
+            return summary_result
+
+        self._result_cache.set(cache_key, summary_result)
+        return summary_result
+
+    @staticmethod
+    def _build_summary_result(group_id: int, hours: int, result: dict) -> SummaryResult:
         raw_topics = result.get("topics", []) or []
         topics = [
             t if isinstance(t, TopicSummary) else TopicSummary.model_validate(t)
