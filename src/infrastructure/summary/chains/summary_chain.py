@@ -1,14 +1,12 @@
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from typing import Dict, List
 
 from ....domain.entities.summary import SummaryOutput
 from ...prompts import SummaryPromptTemplate
-from ...message_processing.formatters.format_messages import format_messages
 
 
 class SummaryChain:
-    """摘要生成链。"""
+    """摘要生成链：接收已格式化的消息文本，输出结构化话题摘要。"""
 
     def __init__(self, llm, max_topics: int = 5):
         self.llm = llm
@@ -23,13 +21,7 @@ class SummaryChain:
             | self.output_parser
         )
 
-    async def invoke(
-        self,
-        messages: List[Dict],
-        memory_context: str = "",
-    ) -> SummaryOutput:
-        messages_text = format_messages(messages)
-
+    async def invoke(self, messages_text: str, memory_context: str = "") -> SummaryOutput:
         if not messages_text:
             return SummaryOutput(topics=[])
 
@@ -40,7 +32,6 @@ class SummaryChain:
             }
         )
 
-        # 兜底清洗：过滤掉空 topic/detail 的噪声条目（如 {}）
         result.topics = [
             t
             for t in result.topics

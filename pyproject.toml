@@ -1,0 +1,22 @@
+[project]
+name = "llm-scribe"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "nonebot2>=2.2.0",
+    "nonebot-adapter-onebot>=2.4.0",
+    "pydantic",
+    "openai",
+    "langgraph",
+    "langchain-core",
+    "langchain-community",
+    "tiktoken",
+    "pymysql",
+    "aiomysql",
+    "tzdata",
+    "cryptography",
+    "aiohttp",
+    "jinja2",
+    "playwright",
+    "loguru",
+]

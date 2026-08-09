@@ -9,6 +9,8 @@ langchain-core
 langchain-community
 tiktoken
 pymysql
+aiomysql
+tzdata
 cryptography
 aiohttp
 jinja2
