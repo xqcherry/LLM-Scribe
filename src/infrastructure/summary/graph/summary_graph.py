@@ -257,6 +257,7 @@ class SummaryGraph:
             estimated_cost = 0.0
 
         token_usage = TokenUsage(
+            model=state["selected_model"],
             prompt_tokens=state["token_count"],
             total_tokens=state["token_count"],
             estimated_cost=estimated_cost,

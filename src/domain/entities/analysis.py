@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class TokenUsage(BaseModel):
     """token使用统计"""
 
+    model: str = ""
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
