@@ -6,20 +6,20 @@
     <title>群聊简报 - {{ header.group_id }}</title>
     <style>
         :root {
-            /* 配色：stone 暖中性 + teal 强调 + amber 峰值对比 */
-            --background: #FAFAF9;
-            --card: #FFFFFF;
-            --foreground: #1C1917;
-            --body: #292524;
-            --muted: #F5F5F4;
-            --muted-foreground: #78716C;
-            --faint: #A8A29E;
-            --border: #D6D3D1;
-            --brand: #0F766E;
-            --brand-soft: rgba(15, 118, 110, 0.09);
-            --peak: #B45309;
-            --debug-text: #92400E;
-            --shadow: 0 1px 2px rgba(28, 25, 23, 0.06);
+            /* 配色：stone 暖黑 + teal 强调 + amber 峰值对比 */
+            --background: #1C1917;
+            --card: #292524;
+            --foreground: #FAFAF9;
+            --body: #D6D3D1;
+            --muted: #44403C;
+            --muted-foreground: #A8A29E;
+            --faint: #78716C;
+            --border: #57534E;
+            --brand: #2DD4BF;
+            --brand-soft: rgba(45, 212, 191, 0.14);
+            --peak: #FBBF24;
+            --debug-text: #FACC15;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 
             /* 字体三角色：serif(宋体+Georgia) 标题数字 / sans(雅黑) 正文 / mono 数据 */
             --font-serif: 'Georgia', 'STSong', 'SimSun', 'Songti SC', serif;
@@ -163,7 +163,7 @@
             font-family: var(--font-mono);
             font-size: var(--text-xs);
             color: var(--peak);
-            background: rgba(180, 83, 9, 0.08);
+            background: rgba(251, 191, 36, 0.12);
             padding: var(--space-1) var(--space-2);
             border-radius: var(--radius-full);
             font-variant-numeric: tabular-nums;
@@ -174,7 +174,7 @@
             display: block;
         }
         .activity-fill { fill: url(#actFill); }
-        .act-stop-top { stop-color: var(--brand); stop-opacity: 0.28; }
+        .act-stop-top { stop-color: var(--brand); stop-opacity: 0.32; }
         .act-stop-bottom { stop-color: var(--brand); stop-opacity: 0; }
         .activity-line {
             fill: none;
