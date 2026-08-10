@@ -41,7 +41,7 @@ def data_adapter(summary_result: SummaryResult) -> Dict[str, Any]:
         },
         "topics": adapted_topics,
         "metadata": {
-            "model": "unknown",
+            "model": usage.model or "unknown",
             "total_tokens": usage.total_tokens,
             "cost": usage.estimated_cost,
         },

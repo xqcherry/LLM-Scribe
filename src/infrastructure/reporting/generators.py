@@ -246,23 +246,26 @@ class ReportGenerator:
         return {"nickname": nickname, "avatar": avatar_b64}
 
 
-    async def _get_user_avatar_base64(self, user_id: str, getter: Optional[Callable]) -> str:
-        """带缓存的头像获取"""
-        cache_file = self.avatar_cache_dir / f"{user_id}.png"
+    async def _get_user_avatar_base64(
+        self, user_id: str, getter: Optional[Callable], spec: int = 100,
+    ) -> str:
+        """带 TTL 缓存的头像获取，下载失败时保留旧缓存"""
+        cache_file = self.avatar_cache_dir / f"{user_id}_spec{spec}.png"
 
-        # 1. 命中缓存
+        # 1. 命中缓存且未过期（TTL 7 天）
         if cache_file.exists():
-            data = cache_file.read_bytes()
-            return f"data:image/png;base64,{base64.b64encode(data).decode()}"
+            age_s = datetime.now().timestamp() - cache_file.stat().st_mtime
+            if age_s < 7 * 24 * 3600:
+                data = cache_file.read_bytes()
+                return f"data:image/png;base64,{base64.b64encode(data).decode()}"
 
-        # 2. 获取 URL (优先使用 getter，后备 QQ)
+        # 2. 缓存不存在或已过期 → 尝试下载
         url = None
         if getter:
             url = await getter(user_id)
         if not url and user_id.isdigit():
-            url = f"https://q4.qlogo.cn/headimg_dl?dst_uin={user_id}&spec=100"
+            url = f"https://q4.qlogo.cn/headimg_dl?dst_uin={user_id}&spec={spec}"
 
-        # 3. 下载并存缓存
         if url:
             try:
                 async with aiohttp.ClientSession() as sess:
@@ -274,7 +277,12 @@ class ReportGenerator:
             except Exception as e:
                 logger.warning(f"下载头像失败 {user_id}: {e}")
 
-        # 4. 默认头像
+        # 3. 下载失败但旧缓存存在 → 保留旧缓存
+        if cache_file.exists():
+            data = cache_file.read_bytes()
+            return f"data:image/png;base64,{base64.b64encode(data).decode()}"
+
+        # 4. 无缓存且下载失败 → 默认头像
         return "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2RkZCIvPjwvc3ZnPg=="
 
 
